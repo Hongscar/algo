@@ -3248,6 +3248,260 @@ public class Test {
         return dp[m - 1][n - 1];
     }
 
+    public boolean isHappy(int n) {
+        HashMap<String, Integer> map = new HashMap<>();
+        while(n != 1) {
+            String temp = String.valueOf(n);
+            if (map.get(temp) != null)
+                return false;
+            map.put(temp, 1);
+            int sum = 0;
+            char[] temps = temp.toCharArray();
+            for (char c: temps)
+                sum += (c - '0') * (c - '0');
+            n = sum;
+        }
+        return true;
+    }
+
+    public boolean isUgly(int num) {
+        if (num <= 0)
+            return false;
+        while (num > 1)
+            if (num % 2 == 0)
+                num = num / 2;
+            else if (num % 3 == 0)
+                num = num / 3;
+            else if (num % 5 == 0)
+                num = num / 5;
+            else
+                return false;
+        return true;
+    }
+
+    public int countPrimes(int n) {
+        if (n <= 2)
+            return 0;
+        int count = 1;
+        List<Integer> primes = new ArrayList<>();
+        primes.add(2);
+        for (int i = 1; i < n; i++)
+            if (isPrime(i, primes))
+                count++;
+        return count;
+    }
+
+    /*      elder solution
+        // use i * i <= num, insted of i <= sqrt(num)
+        // it can avoid repeatedly calling an expensive function sqrt()
+        for (int i = 2; i * i <= num; i++)      // n ^ 1.5 , too slow;
+            if (num % i == 0)
+                return false;
+                */
+    public boolean isPrime(int num, List<Integer> list) {
+        // not good either, use an array to store each element
+        // this algo use only about n / 10 space memory, but we want to use n space memory
+        // and then we get the time cost is : nloglogn! This method is sieve of eratosthenes
+        if (num <= 1)
+            return false;
+        for (int i = 0; i < list.size(); i++) {
+            if (num % list.get(i) == 0)
+                return false;
+            if (i == list.size() - 1)
+                list.add(num);
+        }
+        return true;
+    }
+
+    public int numSquares(int n) {
+        List<Integer> squares = new ArrayList<>();
+        int i1 = 1;
+        while (i1 * i1 <= n)
+            squares.add(i1 * i1++);
+        int size = squares.size();
+        int leftIndex = 0;
+        int currentSum = 0;
+        int min = n;
+
+        for (int i = size - 1; i >= 0; i--) {
+            int count = 0;
+            int j = i;
+            int beginN = n;
+            while (j < size) {
+                int curr = beginN / squares.get(j);
+                currentSum += curr * squares.get(j);
+                count += curr;
+                beginN -= currentSum;
+                currentSum = 0;
+                if (beginN == 0) {
+                    min = min < count ? min : count;
+                    break;
+                }
+                if (count >= min) {
+                    return min;
+                }
+                for (int k = 0; k <= j - 1; k++) {
+                    if (squares.get(k) == beginN)
+                        min = min < count + 1 ? min : count + 1;
+                    if (squares.get(k + 1) > beginN && squares.get(k) <= beginN) {
+                        // 这个逻辑就是错的，你需要循环n次。最外层你也知道不一定是最大的就是最少的平方数
+                        // 那么内层也是同理的，这里就是默认了内层使用内层最大的数。这个逻辑是错误的
+                        leftIndex = k;
+                        break;
+                        //例子： 435 = 361 + 49 + 25
+                        // 如果按照这层逻辑，那么取了 361之后(最外层不一定是400获得min)，原本内层需要选49的
+                        // 但这个逻辑只会选择64.
+                    }
+                }
+                j = leftIndex;
+            }
+        }
+        return min;
+    }
+
+    int[] memo;
+    public int numSquares1(int n) {
+        memo = new int[n + 1];
+        return numSqu(n);
+    }
+
+    private int numSqu(int n) {
+        if (memo[n] != 0)
+            return memo[n];
+        int val = (int)Math.sqrt(n);
+        if (val * val == n)
+            return memo[n] = 1;
+        int res = Integer.MAX_VALUE;
+        for (int i = 1; i * i < n; i++)
+            res = Math.min(res, numSqu(n - i * i) + 1);
+        return memo[n] = res;
+    }
+
+    public int countVowelPermutation(int n) {
+        long[][] dp = new long[5][n];
+        int sum = 0;
+        int mod = (int)Math.pow(10, 9) + 7;
+        for (int i = 0; i < 5; i++)
+            dp[i][0] = 1;
+        // a : 0, e : 1, i : 2, o : 3, u : 4
+        for (int i = 0; i < n - 1; i++) {
+            dp[1][i + 1] += dp[0][i];
+            dp[0][i + 1] += dp[1][i];
+            dp[2][i + 1] += dp[1][i];
+            dp[0][i + 1] += dp[2][i];
+            dp[1][i + 1] += dp[2][i];
+            dp[3][i + 1] += dp[2][i];
+            dp[4][i + 1] += dp[2][i];
+            dp[2][i + 1] += dp[3][i];
+            dp[4][i + 1] += dp[3][i];
+            dp[0][i + 1] += dp[4][i];
+
+            for (int j = 0; j < 5; j++)
+                dp[j][i + 1] %= mod;
+        }
+        for (int i = 0; i < 5; i++) {
+            sum += dp[i][n - 1];
+            sum %= mod;
+        }
+        return sum;
+    }
+
+    public ListNode mergeKLists(ListNode[] lists) {
+        ArrayList<Integer> result = new ArrayList<>();
+        for (ListNode list: lists) {
+            while (list != null) {
+                result.add(list.val);
+                list = list.next;
+            }
+        }
+        Collections.sort(result);
+        ListNode res = new ListNode(0);
+        ListNode current = res;
+        for (int i: result) {
+            current = new ListNode(i);
+            current = current.next;
+        }
+        return res;
+    }
+
+    public List<List<Integer>> subsets(int[] nums) {
+        List<List<Integer>> result = new ArrayList<>();
+        result.add(new ArrayList<>());
+        int length = nums.length;
+        if (length == 0)
+            return result;
+        Arrays.sort(nums);
+        boolean[] visited = new boolean[length];
+        List<Integer> curr = new ArrayList<>();
+        btSubsets(nums, result, visited, Integer.MIN_VALUE, curr);
+        return result;
+    }
+
+    public void btSubsets(int[] nums, List<List<Integer>> result, boolean[] visited, int current, List<Integer> curr) {
+        if (current == nums[nums.length - 1])
+            return;
+        for (int i = 0; i < nums.length; i++) {
+            if (!visited[i] && nums[i] >= current) {
+                curr.add(nums[i]);
+                visited[i] = true;
+                result.add(new ArrayList<>(curr));
+                btSubsets(nums, result, visited, nums[i], curr);
+                curr.remove(curr.size() - 1);
+                visited[i] = false;
+            }
+        }
+    }
+
+    public boolean isOneBitCharacter(int[] bits) {
+        int length = bits.length;
+        int current = 0;
+        while (current < length)
+            if (current == length - 1)
+                return true;
+            else if (bits[current] == 0)
+                current++;
+            else
+                current += 2;
+        return false;
+    }
+
+    public List<Integer> grayCode(int n) {
+        List<Integer> result = new ArrayList<>();
+        result.add(0);
+        for (int i = 0; i < n; i++) {
+            int increment = (int)Math.pow(2, i);
+            List<Integer> prev = new ArrayList<>(result);
+            Collections.reverse(prev);
+            for (int val: prev)
+                result.add(val + increment);
+        }
+        return result;
+    }
+
+    public int maxDepth(TreeNode root) {
+        int depth = 1;
+        depth = getDepth(root, depth);
+        return depth;
+    }
+
+    public int getDepth(TreeNode root, int currentDepth) {
+        if (root == null)
+            return 0;
+        if (root.left == null && root.right == null)
+            return currentDepth;
+        else
+            return Math.max(getDepth(root.left, currentDepth + 1), getDepth(root.right, currentDepth + 1));
+    }
+
+    public int maxProfit1(int[] prices, int fee) {
+        int cash = 0, hold = -prices[0];
+        for (int i = 1; i < prices.length; i++) {
+            cash = Math.max(cash, hold + prices[i] - fee);
+            hold = Math.max(hold, cash - prices[i]);
+        }
+        return cash;
+    }
+
 
 
 
