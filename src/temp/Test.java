@@ -507,6 +507,14 @@ public class Test {
         return lists1;
     }
 
+    class ListNode {
+        int val;
+        ListNode next;
+
+        ListNode(int x) {
+            val = x;
+        }
+    }
 
     public static ListNode removeNthFromEnd(ListNode head, int n) {
         if (head == null)
@@ -579,7 +587,7 @@ public class Test {
      * ListNode(int x) { val = x; }
      * }
      */
-    public static ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
         if (l1 == null)
             return l2;
         if (l2 == null)
@@ -639,7 +647,7 @@ public class Test {
             backtrack(list, result + ')', left, right + 1, n);
     }
 
-    public static ListNode swapPairs(ListNode head) {
+    public ListNode swapPairs(ListNode head) {
         ListNode pre = new ListNode(0);
         pre.next = head;
         ListNode temp = pre;
@@ -3502,12 +3510,136 @@ public class Test {
         return cash;
     }
 
+    // 判断环形链表solution1  -- 使用哈希表来判断，时空复杂度均为n
+    public boolean hasCycle(ListNode head) {
+        HashSet<ListNode> set = new HashSet<>();
+        while (head != null) {
+            if (set.contains(head))
+                return true;
+            else
+                set.add(head);
+            head = head.next;
+        }
+        return false;
+    }
 
+    // 判断环形链表solution2 -- 使用双指针，时间复杂度n，空间复杂度1
+    public boolean hasCycle1(ListNode head) {
+        if (head == null || head.next == null)
+            return false;
+        ListNode fast = head.next.next;
+        ListNode slow = head;
+        while (fast != null && slow != null && fast.next != null) {
+            if (fast.next == slow || slow.next == fast)
+                return true;
+            fast = fast.next.next;
+            slow = slow.next;
+        }
+        return false;
+    }
 
+    // 官方的双指针解法
+    public boolean hasCycle2(ListNode head) {
+        if (head == null || head.next == null) {
+            return false;
+        }
+        ListNode slow = head;
+        ListNode fast = head.next;
+        while (slow != fast) {                          // 拿 是否相等来判断，也是一样的。
+            if (fast == null || fast.next == null) {    // 因为fast走得更快，所以确实没必要判断slow ifnull
+                return false;
+            }
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return true;
+    }
+
+    public ListNode detectCycle(ListNode head) {
+        HashSet<ListNode> set = new HashSet<>();
+        while (head != null) {
+            if (set.contains(head))
+                return head;
+            else
+                set.add(head);
+            head = head.next;
+        }
+        return null;
+    }
+
+    public ListNode detectCycle1(ListNode head) {
+        if (head == null || head.next == null)
+            return null;
+        ListNode fast = head, slow = head;
+        boolean ifCycle = false;
+        while (fast != null && fast.next != null) {
+            fast = fast.next.next;
+            slow = slow.next;
+            if (fast == slow) {
+                ifCycle = true;
+                break;
+            }
+        }
+        if (!ifCycle)
+            return null;
+        while (head != slow) {
+            head = head.next;
+            slow = slow.next;
+        }
+        return head;
+    }
+
+    public String reverseWords(String s) {
+        String[] strings = s.split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String s1: strings) {
+            sb.append(new StringBuilder(s1).reverse().toString());
+            sb.append(" ");
+        }
+        return sb.toString().trim();
+    }
+
+    public String reverseStr(String s, int k) {
+        StringBuilder result = new StringBuilder();
+        while (s.length() > 0) {
+            if (s.length() >= 2 * k) {
+                StringBuilder sb1 = new StringBuilder(s.substring(0, k));
+                sb1.reverse();
+                sb1.append(s.substring(k, 2 * k));
+                result.append(sb1);
+                s = s.substring(2 * k);
+            }
+            else if (s.length() < 2 * k && s.length() >= k) {
+                StringBuilder sb1 = new StringBuilder(s.substring(0, k));
+                result.append(sb1.reverse());
+                s = s.substring(k);
+                result.append(s);
+                break;
+            }
+            else {  // s.length() < k
+                StringBuilder sb1 = new StringBuilder(s);
+                result.append(sb1.reverse());
+                break;
+            }
+        }
+        return result.toString();
+    }
+
+    public void reverseString(char[] s) {
+        int left = 0;
+        int right = s.length - 1;
+        while (left < right) {
+            char temp = s[left];
+            s[left++] = s[right];
+            s[right--] = temp;
+        }
+    }
 
     public static void main(String[] args) {
         Test test = new Test();
-        System.out.println(test.isMatch("b", "ab*b"));
+        test.reverseString(new char[]{});
+//        System.out.println(test.reverseStr("avcdefg", 2));
+//        System.out.println(test.isMatch("b", "ab*b"));
 //        List<Integer> list = test.countSteppingNumbers(0, 0);
 //        for (int i = 0; i < list.size(); i++) {
 //            System.out.print(list.get(i) + " ");
@@ -3882,12 +4014,5 @@ public class Test {
 }
 
 
-    class ListNode {
-        int val;
-        ListNode next;
 
-        ListNode(int x) {
-            val = x;
-        }
-    }
 
