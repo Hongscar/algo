@@ -1,10 +1,12 @@
 package temp;
 
+import com.sun.deploy.util.ArrayUtil;
 import sun.reflect.generics.tree.Tree;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -58,6 +60,7 @@ public class Test {
         return result;
     }
 
+    // 5  暴力法 405ms
     public static String longestPalindrome(String s) {
         int length = s.length();
         if (length <= 1)
@@ -114,6 +117,32 @@ public class Test {
         }
         String result = s.substring(index, index + max);
         return result;
+    }
+
+    // 5 DP 71ms
+    public String longestPalindrome2(String s) {
+        boolean[][] dp = longestPalindromeHelper(s);
+        String res = "";
+        int max = 1;
+        for (int i = 0; i < dp.length; i++)
+            for (int j = i; j < dp.length; j++)
+                if (dp[i][j])
+                    if (max < j - i + 1) {
+                        max = j - i + 1;
+                        res = s.substring(i, j + 1);
+                    }
+        return res;
+    }
+
+    public boolean[][] longestPalindromeHelper(String s) {
+        boolean[][] dp = new boolean[s.length()][s.length()];
+        for (int j = 0; j < s.length(); j++)
+            for (int i = 0; i <= j; i++)
+                if (i == j)
+                    dp[i][j] = true;
+                else if (s.charAt(i) == s.charAt(j) && (j - i == 1 || dp[i + 1][j - 1]))
+                    dp[i][j] = true;
+        return dp;
     }
 
     public static String convert1(String s, int numRows) {
@@ -514,6 +543,10 @@ public class Test {
         ListNode(int x) {
             val = x;
         }
+    }
+
+    public ListNode makeNode(int x) {
+        return new ListNode(x);
     }
 
     public static ListNode removeNthFromEnd(ListNode head, int n) {
@@ -2000,6 +2033,10 @@ public class Test {
         TreeNode(int x) {
             val = x;
         }
+    }
+
+    public TreeNode makeTreeNode(int x) {
+        return new TreeNode(x);
     }
 
     // 树的遍历-递归实现
@@ -3635,380 +3672,2054 @@ public class Test {
         }
     }
 
+    // 用栈存储倒置的链表。如果第一个就不相同，返回null。否则，返回开始不相同的前一个. 4ms
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        if (headA == null || headB == null)
+            return null;
+        LinkedList<ListNode> list1 = new LinkedList<>();
+        LinkedList<ListNode> list2 = new LinkedList<>();
+        ListNode currentA = headA, currentB = headB;
+        while (currentA != null) {
+            list1.addFirst(currentA);
+            currentA = currentA.next;
+        }
+        while (currentB != null) {
+            list2.addFirst(currentB);
+            currentB = currentB.next;
+        }
+        int minSize = Math.min(list1.size(), list2.size());
+        ListNode temp = list1.peek();
+        for (int i = 0; i < minSize; i++) {
+            ListNode temp1 = list1.pop();
+            ListNode temp2 = list2.pop();
+            if (temp1 != temp2)
+                if (i == 0)
+                    return null;
+                else
+                    return temp;
+            temp = temp1;
+        }
+        return temp;
+    }
+
+    // 超级暴力法,效率也算是创造了自己的历史,647ms！
+    public ListNode getIntersectionNode1(ListNode headA, ListNode headB) {
+        if (headA == null || headB == null)
+            return null;
+        ListNode currentA = headA, currentB = headB;
+        while (currentA != null) {
+            while (currentB != null) {
+                if (currentA == currentB)
+                    return currentA;
+                currentB = currentB.next;
+            }
+            currentB = headB;
+            currentA = currentA.next;
+        }
+        return null;
+    }
+
+    // 哈希表,其实最开始想到的就是这个方法,但debug的时候却出错了,现在重新简单写一遍却直接AC了。
+    // 用时9s,理论上时间复杂度应该跟stack差不多的,但毕竟是理论,哈希表还是需要消耗的
+    public ListNode getIntersectionNode2(ListNode headA, ListNode headB) {
+        if (headA == null || headB == null)
+            return null;
+        ListNode currentA = headA, currentB = headB;
+        HashSet<ListNode> set = new HashSet<>();
+        while (currentA != null) {
+            set.add(currentA);
+            currentA = currentA.next;
+        }
+        while (currentB != null) {
+            if (set.contains(currentB))
+                return currentB;
+            currentB = currentB.next;
+        }
+        return null;
+    }
+
+    // 双指针。假设链表1比链表2长A,那么链表1到达尾部后,指向链表2的头结点,链表2到达尾部则指向链表1的头结点
+    // 然后继续循环,在第二圈的时候,如果存在交点,那么必定会碰到,直接返回。
+    // 如果没有交点,那么第二圈,二者都会同时遍历到对方的尾结点
+    public ListNode getIntersectionNode3(ListNode headA, ListNode headB) {
+        ListNode currentA = headA,  currentB = headB;
+        while (currentA != null && currentB != null) {
+            if (currentA == currentB)
+                return currentA;
+            if (currentA.next == null && currentB.next == null) {
+                return null;
+            }
+            currentA = currentA.next == null ? headB : currentA.next;
+            currentB = currentB.next == null ? headA : currentB.next;
+        }
+        return null;
+    }
+
+    public int majorityElement(int[] nums) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for (int i: nums) {
+            Integer integer = map.get(i);
+            map.put(i, integer == null ? 1 : integer + 1);
+        }
+        int max = 0;
+        int result = 0;
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            int key = entry.getKey();
+            int value = entry.getValue();
+            if (max < value) {
+                max = value;
+                result = key;
+            }
+        }
+        return result;
+
+        // or
+//        Arrays.sort(nums);            因为题目的求众数,有一个特殊的规定,假设众数必定大于floor(n/2)的元素
+//        return nums[nums.length/2];   无论n是奇数还是偶数,中间的元素都会是众数       nlogn
+    }
+
+    // Boyer-Moore 投票算法,将众数记为+1,其他记为-1,那么最后的count结果肯定是大于0.当如果count为0
+    // 那么就把前面的去掉(去掉的众数无关紧要,因为同时还去掉了其他同样多数目的非众数)
+    // ps:这个算法有前提,就是众数必定大于floor(n/2)个,不然下面的例子就错了:
+    // [1,1,1,2,2,2,3]  ==> 这里的输出会是3,而LeetCode的测试结果竟然也是3(看来Leetcode内部就是用这个算法)
+    public int majorityElement1(int[] nums) {
+        int count = 0;
+        int candidate = 0;
+        for (int num: nums) {
+            if (count == 0)
+                candidate = num;
+            count += candidate == num ? 1 : -1;
+        }
+        return candidate;
+    }
+
+    // 反转链表。用三个变量来记录。一直不变的tail(也就是head)，新的head，旧的head
+    public ListNode reverseList(ListNode head) {
+        if (head == null)
+            return head;
+        ListNode currentHead = head;
+        ListNode newHead = head;
+        ListNode tail = head;
+        while (tail.next != null) {
+            newHead = tail.next;
+            tail.next = newHead.next;
+            newHead.next = currentHead;
+            currentHead = newHead;
+        }
+        return newHead;
+    }
+
+    // 递归
+    public ListNode reverseList1(ListNode head) {
+        if (head == null || head.next == null) return head;
+        ListNode p = reverseList1(head.next);
+        head.next.next = head;
+        head.next = null;
+        return p;
+    }
+
+    public boolean containsNearbyDuplicate(int[] nums, int k) {
+        Set<Integer> set = new HashSet<>();
+        for (int i = 0; i < nums.length; i++) {
+            if (!set.add(nums[i]))
+                return true;
+            if (set.size() > k)
+                set.remove(nums[i - k]);
+        }
+        return false;
+    }
+
+    public boolean isPowerOfTwo(int n) {
+        return n > 0 && (n & (n - 1)) == 0;
+        // if n is Power of two, its binary form is 1000...000
+        // n - 1 is 111.1111        then n & (n - 1) == 0
+
+//        long temp = 2147483648L;             // 2 ^ 31
+//        return n > 0 && temp % n == 0;
+    }
+
+    // 查找 BST中两个结点的最近公共祖先
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        while (root != p && root != q) {
+            if ((p.val < root.val && q.val > root.val) || (p.val > root.val && q.val < root.val))
+                return root;
+            else if (p.val < root.val)
+                root = root.left;
+            else
+                root = root.right;
+        }
+        return root;
+    }
+
+    public ListNode removeElements(ListNode head, int val) {
+        if (head == null)
+            return head;
+        ListNode current = head;
+        while (current.next != null)
+            if (current.next.val == val)
+                current.next = current.next.next;
+            else
+                current = current.next;
+        ListNode result = head;
+        if (head.val == val)
+            result = head.next;
+        return result;
+    }
+
+    //
+    public int[] productExceptSelf(int[] nums) {
+        int[] res = new int[nums.length];
+        int temp = 1;
+        for (int i = 0; i < nums.length; i++) {
+            res[i] = temp;          // 存储的是除去当前元素的左边所有元素的乘积
+            temp *= nums[i];
+        }
+        temp = 1;
+        for (int i = nums.length - 1; i >= 0; i--) {
+            res[i] *= temp;         // 再乘以后边的所有元素的乘积
+            temp *= nums[i];
+        }
+        return res;
+    }
+
+    // 查找二叉树中两个结点的最近公共祖先
+    public TreeNode lowestCommonAncestor1(TreeNode root, TreeNode p, TreeNode q) {
+        while (root != null) {
+            boolean ifLeft = isChildren(root.left, p) && isChildren(root.left, q);
+            boolean ifRight = isChildren(root.right, p) && isChildren(root.right, q);
+            if (ifLeft)
+                root = root.left;
+            else if (ifRight)
+                root = root.right;
+            else
+                return root;
+        }
+        return null;
+    }
+
+    public boolean isChildren(TreeNode root, TreeNode children) {
+        if (root == null)
+            return false;
+        if (root == children)
+            return true;
+        return isChildren(root.left, children) || isChildren(root.right, children);
+    }
+
+    public void setZeroes(int[][] matrix) {
+        if (matrix.length == 0)
+            return;
+        int[][] res = new int[matrix.length][matrix[0].length];
+        for (int i1 = 0; i1 < res.length; i1++)
+            for (int j1 = 0; j1 < res[0].length; j1++)
+                res[i1][j1] = matrix[i1][j1];
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                if (matrix[i][j] == 0) {
+                    for (int i1 = 0; i1 < matrix.length; i1++)
+                        res[i1][j] = 0;
+                    for (int j1 = 0; j1 < matrix[0].length; j1++)
+                        res[i][j1] = 0;
+                }
+            }
+        }
+        matrix = res;
+    }
+
+    public String addBinary(String a, String b) {
+        int lengthA = a.length(), lengthB = b.length();
+        if (lengthA == 0)
+            return b;
+        if (lengthB == 0)
+            return a;
+        int minLength = Math.min(lengthA, lengthB);
+        boolean ifA = minLength == lengthA;
+        int increment = 0;
+        LinkedList<String> result = new LinkedList<>();
+        for (int i = 0; i < minLength; i++) {
+            int charA = a.charAt(lengthA - 1 - i) - '0';
+            int charB = b.charAt(lengthB - 1 - i) - '0';
+            int current = charA + charB + increment;
+            if (current <= 1)
+                increment = 0;
+            else
+                increment = 1;
+            result.addFirst(String.valueOf(current % 2));
+        }
+        if (!ifA) {
+            for (int i = minLength; i < lengthA; i++) {
+                int char1 = a.charAt(lengthA - 1 - i) - '0';
+                int current = char1 + increment;
+                if (current <= 1)
+                    increment = 0;
+                else
+                    increment = 1;
+                result.addFirst(String.valueOf(current % 2));
+            }
+        }
+        else {
+            for (int i = minLength; i < lengthB; i++) {
+                int char1 = b.charAt(lengthB - 1 - i) - '0';
+                int current = char1 + increment;
+                if (current <= 1)
+                    increment = 0;
+                else
+                    increment = 1;
+                result.addFirst(String.valueOf(current % 2));
+            }
+        }
+        if (increment != 0)
+            result.addFirst(String.valueOf(increment));
+        String res1 = "";
+        for (String s: result)
+            res1 += s;
+        return res1;
+    }
+
+    public ListNode deleteDuplicates(ListNode head) {
+        HashSet<Integer> set = new HashSet<>();
+        if (head == null)
+            return head;
+        ListNode virtualHead = new ListNode(-1);
+        virtualHead.next = head;
+        ListNode headNode = head;
+        set.add(head.val);
+        while (headNode.next != null) {
+            if (set.contains(headNode.next.val)) {
+                headNode.next = headNode.next.next;
+                continue;
+            }
+            set.add(headNode.next.val);
+            headNode = headNode.next;
+        }
+        return virtualHead.next;
+    }
+
+    public int[] intersection(int[] nums1, int[] nums2) {
+        // 可行,但太慢了
+        Integer[] nums11 = Arrays.stream(nums1).boxed().toArray(Integer[]::new);
+        HashSet<Integer> set1 = new HashSet<>(Arrays.asList(nums11));
+        Integer[] nums22 = Arrays.stream(nums2).boxed().toArray(Integer[]::new);
+        HashSet<Integer> set2 = new HashSet<>(Arrays.asList(nums22));
+        ArrayList<Integer> result = new ArrayList<>();
+        for (Integer i: set1)
+            if (set2.contains(i))
+                result.add(i);
+        int[] res = result.stream().mapToInt(Integer::valueOf).toArray();
+        return res;
+    }
+
+    public int balancedStringSplit(String s) {
+        int result = 0;
+        int status = 0;
+        for (char c: s.toCharArray()) {
+            status += c == 'L' ? 1 : -1;
+            if (status == 0)
+                result++;
+        }
+        return result;
+    }
+
+    // 能写 8 个 while, 你也是人才. 调用额外函数也没必要,直接对queens数组遍历一次,存储在一个全新的数组即可
+    public List<List<Integer>> queensAttacktheKing(int[][] queens, int[] king) {
+        List<List<Integer>> lists = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        int kx = king[0], ky = king[1];
+        int currentX = kx - 1, currentY = ky;
+        int[] toCheck = new int[2];
+
+        while (currentX >= 0) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentX--;
+        }
+        list.clear();
+        currentX = kx + 1;
+        currentY = ky;
+        while (currentX < 8) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentX++;
+        }
+        list.clear();
+        currentX = kx;
+        currentY = ky - 1;
+        while (currentY >= 0) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentY--;
+        }
+        list.clear();
+        currentX = kx;
+        currentY = ky + 1;
+        while (currentY < 8) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentY++;
+        }
+        list.clear();
+        currentX = kx - 1;
+        currentY = ky - 1;
+        while (currentX >= 0 && currentY >= 0) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentX--;
+            currentY--;
+        }
+        list.clear();
+        currentX = kx + 1;
+        currentY = ky + 1;
+        while (currentX < 8 && currentY < 8) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentX++;
+            currentY++;
+        }
+        list.clear();
+        currentX = kx + 1;
+        currentY = ky - 1;
+        while (currentX < 8 && currentY >= 0) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentX++;
+            currentY--;
+        }
+        list.clear();
+        currentX = kx - 1;
+        currentY = ky + 1;
+        while (currentX >= 0 && currentY < 8) {
+            toCheck[0] = currentX;
+            toCheck[1] = currentY;
+            if (ifInDoubleArray(queens, toCheck)) {
+                list.add(currentX);
+                list.add(currentY);
+                lists.add(new ArrayList<>(list));
+                break;
+            }
+            currentX--;
+            currentY++;
+        }
+        return lists;
+    }
+
+    // to check whether res is in source
+    public boolean ifInDoubleArray(int[][] source, int[] res) {
+        for (int i = 0; i < source.length; i++)
+            if (source[i][0] == res[0] && source[i][1] == res[1])
+                return true;
+        return false;
+    }
+
+    // 直接给queens传递到另一个flag数组,就不需要额外函数了.
+    // 其次,增加一个direction二维数组,表示下一个方向,即x, y 下一次的增量是direction[i][0]和direction[i][1]
+    // 当你需要很多次while的时候,用一个增量数组可以减少while语句的次数
+    public List<List<Integer>> queensAttacktheKing1(int[][] queens, int[] king) {
+        List<List<Integer>> result = new ArrayList<>();
+        boolean[][] exists = new boolean[8][8];
+        for (int[] queen: queens)
+            exists[queen[0]][queen[1]] = true;
+        int[][] direction = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, 1}, {1, -1}, {-1, 1}};
+        for (int i = 0; i < direction.length; i++)
+            for (int x = king[0], y = king[1]; x >= 0 && y >= 0 && x < 8 && y < 8;
+                 x += direction[i][0], y += direction[i][1])
+                if (exists[x][y]) {
+                    result.add(Arrays.asList(x, y));
+                    break;
+                }
+        return result;
+    }
+
+    // dp,错的。
+    public int dieSimulator(int n, int[] rollMax) {
+        int result = 0;
+        int[][] dp = new int[n + 1][6];
+        int mod = (int)Math.pow(10, 9) + 7;
+        dp[1][1] = 6;
+        for (int i = 1; i <= n; i++) {
+            for (int j = 0; j < 6; j++) {
+                if (j == 0)
+                    dp[i][j] = 1;
+                else if (i == 1 && j == 1)
+                    continue;
+                else if (i < j)
+                    break;
+                else {
+                    int nextCount = 0;
+                    for (int max: rollMax)
+                        if (max > i)
+                            nextCount++;
+                    dp[i][j] = dp[i - 1][j - 1] + nextCount;
+                }
+            }
+        }
+        for (int res: dp[n]) {
+            result += res;
+            result %= mod;
+        }
+        return result;
+    }
+
+    // 贪心算法, 局部最优,但复杂度是 n ^ 2,可以优化(这里的反向取最优,也可以正向取最优)
+    public int jump(int[] nums) {
+        int target = nums.length - 1;
+        if (target == 0)
+            return 0;
+        int current = 0;
+        int count = 0;
+        while (true)
+            for (int i = 0; i < nums.length; i++)
+                if (nums[i] + i >= target) {
+                    if (i == 0)
+                        return count + 1;
+                    target = i;
+                    count++;
+                    break;
+                }
+    }
+
+    // 正向局部最优,时间复杂度为 n
+    public int jump1(int[] nums) {
+        int maxPosition = 0;
+        int end = 0;
+        int steps = 0;
+        for (int i = 0; i < nums.length; i++) {
+            maxPosition = Math.max(maxPosition, nums[i] + i);
+            if (i == end) {
+                end = maxPosition;
+                steps++;
+            }
+        }
+        return steps;
+    }
+
+    // TODO
+    public String minWindow(String s, String t) {
+        int left = 0;
+        int right = s.length() - 1;
+        String result = " ";
+        for (int i = left; i <= right; i++) {
+            String sub = s.substring(left, right + 1);
+            for (char c: t.toCharArray())
+                if (sub.indexOf(String.valueOf(c)) == -1)
+                    return result;
+            result = sub;
+        }
+
+        return s.contains(t) ? t : " ";     // t.length == 1 ?
+    }
+
+
+//    public ListNode reverseList(ListNode head) {
+//        if (head == null)
+//            return head;
+//        ListNode currentHead = head;
+//        ListNode newHead = head;
+//        ListNode tail = head;
+//        while (tail.next != null) {
+//            newHead = tail.next;
+//            tail.next = newHead.next;
+//            newHead.next = currentHead;
+//            currentHead = newHead;
+//        }
+//        return newHead;
+//    }
+
+    public ListNode reverseKGroup(ListNode head, int k) {
+        if (head == null || k == 1)
+            return head;
+        int num = 0;
+        ListNode dummy = new ListNode(-1);
+        dummy.next = head;
+        ListNode pre = dummy;
+        ListNode end = dummy;       // 是用来判断是否剩下的子链长度不足k
+        while (end.next != null) {
+            for (int i = 0; i < k && end != null; i++)
+                end = end.next;
+            if (end == null)
+                break;
+            ListNode start = pre.next;
+            ListNode next = end.next;
+            end.next = null;        // 直接改变对象,作用是与后续链表断开(因为reverseList方法默认反转全部)
+            pre.next = reverseList(start);
+            start.next = next;      // 翻转后,start已经到达了那一段的结尾(重新连接后半段)
+            pre = start;
+            end = start;
+        }
+
+        return dummy.next;
+    }
+
+    public ListNode reverseList11(ListNode head) {
+        ListNode prev = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode nextTemp = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = nextTemp;
+        }
+        return prev;
+    }
+
+    public ListNode removeElements1(ListNode head, int val) {
+         if (head == null)
+            return head;
+        ListNode current = head;
+        ListNode ttt = new ListNode(999);
+        while (current.next != null) {
+            if (current.next.val == val)
+                current.next = ttt;
+            else
+                current = current.next;
+            System.out.println(current.next == null ? 0 : current.next.val);
+            ttt = new ListNode(888);
+            System.out.println(current.next == null ? 0 : current.next.val);
+        }
+        ListNode result = head;
+        if (head.val == val)
+            result = head.next;
+        return result;
+    }
+
+    public ListNode deleteDuplicates1(ListNode head) {
+        ListNode dummy = new ListNode(-1);
+        dummy.next = head;
+        ListNode temp = dummy;
+        while (temp.next != null && temp.next.next != null) {
+            int tempVal = temp.next.val;
+            int nextVal = temp.next.next.val;
+            if (tempVal == nextVal) {
+                ListNode current = temp.next;
+                while (current != null && current.val == tempVal)
+                    current = current.next;
+                temp.next = current;
+            }
+            else
+                temp = temp.next;
+        }
+
+        return dummy.next;
+    }
+
+    public ListNode partition(ListNode head, int x) {
+        ListNode list1 = new ListNode(0);
+        ListNode list2 = new ListNode(0);
+        ListNode temp1 = list1;
+        ListNode temp2 = list2;
+        ListNode current = head;
+        while (head != null) {
+            if (head.val < x) {
+                temp1.next = new ListNode(head.val);
+                temp1 = temp1.next;
+            }
+            else {
+                temp2.next = new ListNode(head.val);
+                temp2 = temp2.next;
+            }
+            head = head.next;
+        }
+        list1 = list1.next;
+        list2 = list2.next;
+        if (list1 == null)
+            return list2;
+        ListNode temp11 = list1;
+        while (temp11.next != null)
+            temp11 = temp11.next;
+        temp11.next = list2;
+        return list1;
+    }
+
+    // 817
+    public int numComponents(ListNode head, int[] G) {
+        HashSet<Integer> set = new HashSet<>();
+        // 一开始不知道为什么,会使用list,速度奇慢,改用哈希速度快了20倍
+        // Integer[] g = Arrays.stream(G).boxed().toArray(Integer[]::new);
+        // ArrayList<Integer> list = new ArrayList<>(Arrays.asList(g));
+        for (int i: G)
+            set.add(i);
+        int count = 0;
+        while (head.next != null) {
+            if (set.contains(head.val) && !set.contains(head.next.val))
+                count++;
+            head = head.next;
+        }
+        if (set.contains(head.val))        // now it's the tail
+            count++;
+        return count;
+    }
+
+    // 817, 由于G的长度限制为10000,可以使用bitmap,比哈希还要快
+    public int numComponents1(ListNode head, int[] G) {
+        int[] ints = new int[10000];
+        for (int i: G)
+            ints[i]++;
+        boolean pre = false;
+        boolean current = false;
+        int count = 0;
+        while (head != null) {
+            current = ints[head.val] > 0;
+            if (!pre && current)
+                count++;
+            pre = current;
+            head = head.next;
+        }
+        return count;
+    }
+
+    // 725
+    public ListNode[] splitListToParts(ListNode root, int k) {
+        ListNode[] result = new ListNode[k];
+        int length = 0;
+        ListNode head = root;
+        while (head != null) {
+            length++;
+            head = head.next;
+        }
+        int eachPart = length / k;
+        int rest = length % k;
+        head = root;
+        int i = 1, j = 0;
+        ListNode begin = head;
+        ListNode end = head;
+        while (j < k) {
+            if (rest != 0 && i % (eachPart + 1) == 0) {
+                ListNode endNext = end.next;
+                end.next = null;        // 断开
+                result[j++] = begin;
+                begin = end = endNext;
+                i = 1;
+                rest--;
+                continue;   // must continue, or end may be null, then nullPointer Exception
+            }
+            else if (eachPart == 0 && rest == 0) {  // end == null;
+                result[j++] = null;
+                continue;
+            }
+            else if (rest == 0 && i % eachPart == 0) {
+                ListNode endNext = end.next;
+                end.next = null;
+                result[j++] = begin;
+                begin = end = endNext;
+                i = 1;
+                continue;
+            }
+
+            end = end.next;
+            i++;
+        }
+        return result;
+    }
+
+    // 328
+    public ListNode oddEvenList(ListNode head) {
+        if (head == null || head.next == null)
+            return head;
+        ListNode odd = head;
+        ListNode even = head.next;
+        ListNode evenHead=  even;
+        while (even != null && even.next != null) {
+            odd.next = even.next;
+            odd = odd.next;
+            even.next = odd.next;
+            even = even.next;
+        }
+        odd.next = evenHead;
+        return head;
+    }
+
+    // 对于链表,获取最后一个元素的效率太低了(在没有tail指针的情况下)   也可以自己加一个tail指针
+    // 转换成数组(ArrayList),效率提升非常大。 但还有更好的方法
+    public void reorderList(ListNode head) {
+        ListNode pre = new ListNode(-1);
+        btReorderList(pre, head);
+        head = pre.next;
+    }
+
+    public void btReorderList(ListNode result, ListNode head) {
+        if (head == null)
+            return;
+        else {
+            ListNode first = head;
+            ListNode second = head.next;
+            ListNode end = second;
+            while (head.next != null) {
+                if (head.next.next == null) {
+                    end = head.next;
+                    head.next = null;
+                    break;
+                }
+                head = head.next;
+            }
+            ListNode res = result;
+            while (res.next != null)
+                res = res.next;
+            res.next = first;
+            if (first != end) {
+                res = res.next;
+                res.next = end;
+                res = res.next;
+            }
+            btReorderList(result, second);
+        }
+    }
+
+    // 仍然是递归,但增加了尾指针,效率比数组还快(毕竟省去了转换成数组的时间),还有更快的
+    public void reorderList1(ListNode head) {
+
+        if (head == null || head.next == null || head.next.next == null) {
+            return;
+        }
+        int len = 0;
+        ListNode h = head;
+        //求出节点数
+        while (h != null) {
+            len++;
+            h = h.next;
+        }
+
+        reorderListHelper(head, len);
+    }
+
+    private ListNode reorderListHelper(ListNode head, int len) {
+        if (len == 1) {
+            ListNode outTail = head.next;
+            head.next = null;
+            return outTail;
+        }
+        if (len == 2) {
+            ListNode outTail = head.next.next;
+            head.next.next = null;
+            return outTail;
+        }
+        //得到对应的尾节点，并且将头结点和尾节点之间的链表通过递归处理
+        ListNode tail = reorderListHelper(head.next, len - 2);
+        ListNode subHead = head.next;//中间链表的头结点
+        head.next = tail;
+        ListNode outTail = tail.next;  //上一层 head 对应的 tail
+        tail.next = subHead;
+        return outTail;
+    }
+
+    // 先找到中点(可以遍历一次get length,再遍历,也可以直接快慢指针找到中点)。
+    // 根据中点,分成两个链表,第一个不需要处理,第二个做翻转处理
+    // 然后第二个链表以此插入到第一个链表的缝隙中(如果length为奇数,那么会多出一个,一定会在最后,直接添加到最后即可
+    public void reorderList2(ListNode head) {
+        if (head == null || head.next == null || head.next.next == null) {
+            return;
+        }
+        //找中点，链表分成两个
+        ListNode slow = head;
+        ListNode fast = head;
+        while (fast.next != null && fast.next.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+
+        ListNode newHead1 = slow.next;
+        slow.next = null;
+
+        //第二个链表倒置
+        newHead1 = reverseList111(newHead1);
+
+        //链表节点依次连接
+        while (newHead1 != null) {
+            ListNode temp = newHead1.next;
+            newHead1.next = head.next;
+            head.next = newHead1;
+            head = newHead1.next;
+            newHead1 = temp;
+        }
+
+    }
+
+    private ListNode reverseList111(ListNode head) {
+        if (head == null) {
+            return null;
+        }
+        ListNode tail = head;
+        head = head.next;
+
+        tail.next = null;
+
+        while (head != null) {
+            ListNode temp = head.next;
+            head.next = tail;
+            tail = head;
+            head = temp;
+        }
+
+        return tail;
+    }
+
+    // 234
+    public boolean isPalindrome(ListNode head) {
+        if (head == null || head.next == null)
+            return true;
+        // 快慢指针,找链表的中点
+        ListNode fast = head, slow = head;
+        while (fast.next != null && fast.next.next != null) {
+            fast = fast.next.next;
+            slow = slow.next;
+        }
+        slow = reverse(slow.next);
+        while (slow != null) {
+            if (head.val != slow.val)
+                return false;
+            head = head.next;
+            slow = slow.next;
+        }
+        return true;
+    }
+
+    private ListNode reverse(ListNode head) {
+        if (head.next == null)
+            return head;
+        ListNode newHead = reverse(head.next);
+        head.next.next = head;
+        head.next = null;
+        return newHead;
+    }
+
+    // 92  主要思路,找到第 m - 1个(m≠1)个元素left,第 m个元素tempBegin,反转m~n的元素之后
+    // left.next = prev (左边的最后一个元素指向第n个元素), tempBegin.next = right (第m个元素指向第 n + 1个元素)
+    public ListNode reverseBetween(ListNode head, int m, int n) {
+        ListNode dummy = new ListNode(-1);      // 加一个 虚拟指针,处理 m为1的特殊情况
+        dummy.next = head;
+        ListNode current = head;
+        for (int i = 1; i < m - 1; i++)
+            current = current.next;
+        ListNode begin = m == 1 ? current : current.next;   // 注意 m 到底是不是1,1的话需要用到dummy特殊处理
+        ListNode left = m == 1 ? dummy : current;
+        ListNode prev = null;
+        ListNode tempBegin = begin;
+        ListNode right = null;
+        int times = m;
+        while (begin != null) {
+            ListNode nextNode = begin.next;
+            if (times == n)             // 此时已经是最后一次遍历, 下一个元素就是第 n + 1个元素
+                right = begin.next;
+            begin.next = prev;
+            prev = begin;
+            begin = nextNode;
+            if (times == n + 1)
+                break;
+            times++;
+        }
+        left.next = prev;
+        tempBegin.next = right;
+        return dummy.next;
+    }
+
+    // 114
+    public void flatten(TreeNode root) {
+        if (root == null)
+            return;
+        TreeNode result = new TreeNode(root.val);
+        treeDST(root.left, result);     // 因为result已经包含了root.val
+        treeDST(root.right, result);    // 如果直接传root做参数,root值会出现两次
+        root.left = null;
+        root.right = result.right;
+    }
+
+    // 前序遍历
+    public void treeDST(TreeNode treeNode, TreeNode result) {
+        if (treeNode == null)
+            return;
+        while (result.right != null)
+            result = result.right;      // 由于递归,当前的result不一定指向最右(比如left遍历完,再遍历right的时候)
+        result.left = null;
+        result.right = new TreeNode(treeNode.val);
+        treeDST(treeNode.left, result);
+        treeDST(treeNode.right, result);
+    }
+
+    public TreeNode sortedListToBST(ListNode head) {
+        if (head == null)
+            return null;
+        ListNode middle = findMiddle(head);
+        TreeNode result = new TreeNode(middle.val);
+        if (head == middle)
+            return result;          // 只剩下了1个结点,那么就不要再递归了,会陷入无限递归!
+        result.left = sortedListToBST(head);
+        result.right = sortedListToBST(middle.next);
+        return result;
+    }
+
+    public ListNode findMiddle(ListNode head) {
+        if (head == null)  // 如果只有0个结点,返回null
+            return null;
+        if (head.next == null)
+            return head;    // 只有1个结点
+
+        ListNode slow = head, fast = head, prev = head;  // 双指针寻找中点
+        while (fast != null && fast.next != null) {
+            prev = slow;
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        if (prev != null)
+            prev.next = null;   // 断开前一个结点与中点的连接,否则就是无限循环了
+        return slow;    // 当fast指针到达结尾,slow指针就是到达了中点
+    }
+
+    // 1019
+    public int[] nextLargerNodes(ListNode head) {
+        ArrayList<Integer> list = new ArrayList<>();
+        while (head != null) {
+            list.add(head.val);
+            head = head.next;
+        }
+        int[] ints = list.stream().mapToInt(Integer::intValue).toArray();
+        ArrayList<Integer> res = nextGreaterElement(ints);
+        Collections.reverse(res);
+        return res.stream().mapToInt(Integer::valueOf).toArray();
+    }
+
+    // 这个变成了后面最大的元素,用链表存储结果看来还是不行！
+    public int[] nextLargerNodes1(ListNode head) {
+        ArrayList<Integer> result = new ArrayList<>();
+        LinkedList<Integer> stack = new LinkedList<>();
+        ListNode head1 = head;
+        while (head1 != null) {
+            if (stack.isEmpty()) {
+                result.add(0);
+                stack.addFirst(head1.val);
+                head1 = head1.next;
+                continue;
+            }
+            int nextElement = head1.val;
+            int times = 0;
+            while (!stack.isEmpty() && nextElement > stack.getFirst()) {
+                int current = result.get(result.size() - times - 1);
+                if (current == 0) {
+                    stack.removeFirst();
+                    result.set(result.size() - times - 1, nextElement);
+                }
+                times++;
+            }
+            stack.addFirst(nextElement);
+            result.add(0);      // the nextElement
+            head1 = head1.next;
+        }
+        return result.stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    // 168
+    public String convertToTitle(int n) {
+        if (n == 0)
+            return "";
+        StringBuilder sb = new StringBuilder();
+        while (n > 0) {
+            n--;
+            sb.append((char)((n % 26) + 'A'));
+            n /= 26;
+        }
+        return sb.reverse().toString();
+    }
+
+    // 171
+    public int titleToNumber(String s) {
+        int result = 0;
+        for (int i = s.length() - 1; i >= 0; i--)
+            result += Math.pow(26, s.length() - 1 - i) * (int)(s.charAt(i) - 'A' + 1);
+        return result;
+    }
+
+    // 1171
+    public ListNode removeZeroSumSublists(ListNode head) {
+        ListNode dummy = new ListNode(-1);
+        dummy.next = head;              // dummy结点指向head
+        ListNode prev = dummy;          // prev表示可能移除的连续节点的前一个结点
+        ListNode begin = head;          // begin表示移除的连续结点的第一个结点
+        boolean flag = false;           // 如果移除成功,对dummy.next进行递归
+        int sum = 0;
+        while (begin != null) {
+            sum = 0;
+            flag = false;
+            ListNode cBegin = begin;    // cBegin为begin的一个临时引用,用于从begin开始向后遍历
+
+            while (cBegin != null) {
+                sum += cBegin.val;
+                if (sum == 0) {
+                    prev.next = cBegin.next;    // sum为0之后,prev指向了当前cBegin的下一个结点
+                    flag = true;
+                    break;
+                }
+                cBegin = cBegin.next;
+            }
+            if (flag)
+                return removeZeroSumSublists(dummy.next);
+            else {
+                prev = prev.next;       // begin开始的连续结点,不存在总和为0,从next开始重新遍历
+                begin = prev.next;
+            }
+        }
+        return dummy.next;
+    }
+
+    public int numDecodings(String s) {
+        int length = s.length();
+        int[] dp = new int[length + 1];
+        for (int i = 1; i <= length; i++) {
+            if (i == 1) {
+                dp[i] = s.charAt(length - 1) == '0' ? 0 : 1;
+                continue;
+            }
+            if (i == 2) {
+                if (s.charAt(length - 1) != '0' && (s.charAt(length - 2) == '1' || (s.charAt(length - 2) == '2'
+                        && s.charAt(length - 1) <= '6')))
+                    dp[i] = 2;
+                else {
+                    if (s.charAt(length - 2) == '0' || (s.charAt(length - 1) == '0' && s.charAt(length - 2) >= '3'))
+                        dp[i] = 0;
+                    else
+                        dp[i] = 1;
+                }
+                continue;
+            }
+            if (s.charAt(length - i) == '1' || (s.charAt(length - i) == '2' && s.charAt(length - i + 1) <= '6'))
+                dp[i] = dp[i - 1] + dp[i - 2];
+            else
+                dp[i] = s.charAt(length - i) == '0' ? 0 : dp[i - 1];
+        }
+        return dp[length];
+    }
+
+    // 84, n ^ 3,太暴力了,not pass
+    public int largestRectangleArea(int[] heights) {
+        int sum = 0, height = 1, current = 0;
+        Integer[] integers = Arrays.stream(heights).boxed().toArray(Integer[]::new);
+        HashSet<Integer> set = new HashSet<>(Arrays.asList(integers));
+        Iterator<Integer> it = set.iterator();
+        while (it.hasNext()) {
+            height = it.next();
+            for (int i = 0; i < heights.length; i++) {
+                if (heights[i] >= height) {
+                    current = height;
+                    for (int j = i + 1; j < heights.length; j++) {
+                        if (heights[j] >= height)
+                            current += height;
+                        else {
+                            i = j - 1;
+                            break;
+                        }
+                    }
+                    sum = sum > current ? sum : current;
+                }
+            }
+            height++;
+        }
+        return sum;
+    }
+
+    // 使用一个单调栈,时空复杂度均为n.  (主要思路,只遍历一遍,使得包含第n个矩形的两边左右延长,获取那个矩形的面积
+    // 基本思路：https://blog.csdn.net/Zolewit/article/details/88863970
+    public int largestRectangleArea1(int[] heights) {
+        LinkedList<Integer> stack = new LinkedList<>();
+        int sum = 0;
+        stack.addFirst(-1);     // -1使得后续代码简化不少
+        for (int i = 0; i < heights.length; i++) {
+            while ((stack.getFirst() != -1 && heights[i] <= heights[stack.getFirst()])) {
+                int current = heights[stack.removeFirst()] * (i - stack.getFirst() - 1);
+                sum = sum > current ? sum : current;
+            }
+            stack.addFirst(i);
+        }
+        while (stack.getFirst() != -1)          // 用于处理最后一个元素的情况
+            sum = Math.max(sum, heights[stack.removeFirst()] * (heights.length - stack.getFirst() - 1));
+        return sum;
+    }
+
+    // 101      递归解法
+    public boolean isSymmetric(TreeNode root) {
+        if (root == null)
+            return true;        // 空树
+        return isSymmetricHelper(root.left, root.right);
+    }
+
+    public boolean isSymmetricHelper(TreeNode left, TreeNode right) {
+        if (left == null && right == null)
+            return true;
+        else if (left == null || right == null)
+            return false;
+        else if (left.val != right.val)
+            return false;
+        else
+            return isSymmetricHelper(left.left, right.right) && isSymmetricHelper(left.right, right.left);
+    }
+
+    // 179
+    public String largestNumber(int[] nums) {
+        boolean flag = false;
+        for (int i: nums)
+            if (i != 0) {
+                flag = true;
+                break;
+            }
+        if (!flag)
+            return "0";         // 全是0的情况
+        StringBuilder sb = new StringBuilder();
+        ArrayList<String> list = new ArrayList<>();
+        for (int num: nums)
+            list.add(String.valueOf(num));
+        Collections.sort(list, new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                int first = o2.charAt(0) - o1.charAt(0);
+                if (first != 0)
+                    return first;
+                String temp = o1;
+                o1 += o2;
+                o2 += temp;
+                int i = 1;
+                int length = o1.length();
+                while (i < length) {
+                    first = o2.charAt(i) - o1.charAt(i);
+                    i++;
+                    if (first == 0)
+                        continue;
+                    else
+                        return first;
+                }
+                return first;
+            }
+        });
+        System.out.println(list);
+        for (String str: list)
+            sb.append(str);
+        return sb.toString();
+    }
+
+    // 105
+    public TreeNode buildTree(int[] preorder, int[] inorder) {
+        if (preorder.length == 0)
+            return null;
+        int rootVal = preorder[0];
+        int i;
+        for (i = 0; i < inorder.length; i++)
+            if (inorder[i] == rootVal)
+                break;
+        TreeNode root = new TreeNode(rootVal);
+        int[] leftInorder = Arrays.copyOfRange(inorder, 0, i);
+        int[] rightInorder = Arrays.copyOfRange(inorder, i + 1, inorder.length);
+        int[] leftPreorder = Arrays.copyOfRange(preorder, 1, leftInorder.length + 1);
+        int[] rightPreorder = Arrays.copyOfRange(preorder, 1 + leftPreorder.length, preorder.length);
+        root.left = buildTree(leftPreorder, leftInorder);
+        root.right = buildTree(rightPreorder, rightInorder);
+        return root;
+    }
+
+    // 108
+    public TreeNode sortedArrayToBST(int[] nums) {
+        if (nums.length == 0)
+            return null;
+        int middle = nums[nums.length / 2];
+        TreeNode root = new TreeNode(middle);
+        int[] left = Arrays.copyOf(nums, nums.length / 2);
+        int[] right = Arrays.copyOfRange(nums, nums.length / 2 + 1, nums.length);
+        root.left = sortedArrayToBST(left);
+        root.right = sortedArrayToBST(right);
+        return root;
+    }
+
+    // 125  更快的应该是双指针慢慢遍历, 如果遇到大写字母,就转成小写.如果遇到小写&数字,就加入到char数组(其他都pass
+    // 最后再对char进行双指针遍历。
+    public boolean isPalindrome(String s) {
+        s = s.toLowerCase();
+        s = s.replaceAll("[^a-z0-9]", "");
+        StringBuilder sb = new StringBuilder(s);
+        return sb.reverse().toString().equals(s);
+    }
+
+    class Node1 {
+        public int val;
+        public Node1 left;
+        public Node1 right;
+        public Node1 next;
+
+        public Node1() {}
+
+        public Node1(int _val,Node1 _left,Node1 _right,Node1 _next) {
+            val = _val;
+            left = _left;
+            right = _right;
+            next = _next;
+        }
+    };
+
+    // 116
+    public Node1 connect(Node1 root) {
+        if (root == null || root.left == null || root.right == null)
+            return root;
+        root.left.next = root.right;
+        if (root.next != null)
+            root.right.next = root.next.left;
+        connect(root.left);
+        connect(root.right);
+        return root;
+    }
+
+    // 112
+    public boolean hasPathSum(TreeNode root, int sum) {
+        if (root == null)
+            return false;
+        if (root.left == null && root.right == null && root.val == sum) // 当前结点必须是叶子结点
+            return true;
+        return hasPathSum(root.left, sum - root.val) || hasPathSum(root.right, sum - root.val);
+    }
+
+    // 113
+    public List<List<Integer>> pathSum(TreeNode root, int sum) {
+        List<List<Integer>> result = new ArrayList<>();
+        List<Integer> current = new ArrayList<>();
+        hasPathSumHelper(root, sum, current, result);
+        return result;
+    }
+
+    public void hasPathSumHelper(TreeNode root, int sum, List<Integer> current, List<List<Integer>> result) {
+        if (root == null)
+            return;
+        current.add(root.val);
+        if (root.left == null && root.right == null && root.val == sum)
+            result.add(new ArrayList<>(current));
+        hasPathSumHelper(root.left, sum - root.val, current, result);
+        hasPathSumHelper(root.right, sum - root.val, current, result);
+        current.remove(current.size() - 1);     // 左右子树遍历完,才remove当前的root结点
+    }
+
+    // 128
+    public int longestConsecutive(int[] nums) {
+        if (nums.length == 0)
+            return 0;
+        Arrays.sort(nums);
+        int length = 1, max = 1;
+        for (int i = 0; i < nums.length - 1; i++)
+            if (nums[i] == nums[i + 1] - 1)
+                length++;
+            else if (nums[i] == nums[i + 1])
+                continue;
+            else {
+                max = max > length ? max : length;
+                length = 1;
+            }
+        max = max > length ? max : length;
+        return max;
+    }
+
+    // 347
+    public List<Integer> topKFrequent(int[] nums, int k) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for (int num: nums) {
+            Integer i = map.get(num);
+            map.put(num, i == null ? 1 : i + 1);
+        }
+        // 对HashMap根据Value排序
+        List<Map.Entry<Integer, Integer>> list = new ArrayList<>(map.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<Integer, Integer>>() {
+            @Override
+            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
+                return o2.getValue().compareTo(o1.getValue());
+            }
+        });
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < k; i++)
+            result.add(list.get(i).getKey());
+        return result;
+    }
+
+    // 387      直接用哈希表
+    public int firstUniqChar(String s) {
+        HashMap<Character, Integer> map = new HashMap<>();
+        HashSet<Character> set = new HashSet<>();
+        int i = 0;
+        for (char c: s.toCharArray()) {
+            if (set.contains(c)) {
+                map.put(c, Integer.MIN_VALUE);
+                i++;
+            }
+            else {
+                set.add(c);
+                map.put(c, i++);
+            }
+        }
+        int result = Integer.MAX_VALUE;
+        for (Map.Entry<Character, Integer> entry: map.entrySet())
+            if (entry.getValue() >= 0)
+                result = result < entry.getValue() ? result : entry.getValue();
+        return result == Integer.MAX_VALUE ? -1 : result;
+    }
+
+    // 387改进,由于是找字符,直接遍历26个即可！没有重复的条件 indexOf == lastIndexOf !!
+    public int firstUniqChar1(String s) {
+        int index = -1;
+        for (char ch = 'a'; ch <= 'z'; ch++) {
+            int beginIndex = s.indexOf(ch);
+            if (beginIndex != -1 && beginIndex == s.lastIndexOf(ch))
+                index = (index == -1 || index > beginIndex) ? beginIndex : index;
+        }
+        return index;
+    }
+
+    // 739
+    public int[] dailyTemperatures(int[] T) {
+        int[] res = new int[T.length];
+        LinkedList<Integer> stack = new LinkedList<>();
+        for (int i = T.length - 1; i >= 0; i--) {
+            while (!stack.isEmpty() && T[stack.getFirst()] <= T[i])     // 与496相比,存储的是index而不是值
+                stack.removeFirst();
+            res[i] = stack.isEmpty() ? 0 : stack.getFirst() - i;
+            stack.addFirst(i);
+        }
+        return res;
+    }
+
+    // 647 DP
+    public int countSubstrings(String s) {
+        int res = 0;
+        boolean[][] dp = countSubstringsHelper(s);
+        for (int i = 0; i < dp.length; i++)
+            for (int j = 0; j < dp[0].length; j++)
+                if (dp[i][j])
+                    res++;
+        return res;
+    }
+
+    // DP方程: dp[i][j] == true (when i == j)     i表示左边第一位, j表示右边第一位.
+    // dp[i][j] ==  true  (when i == j - 1 (子串长度为2), 或者dp[i][j] == dp[i + 1][j - 1],左右各靠近一位)
+    public boolean[][] countSubstringsHelper(String s) {
+        boolean[][] dp = new boolean[s.length()][s.length()];
+        for (int j = 0; j < s.length(); j++)
+            for (int i = 0; i <= j; i++)
+                if (i == j)
+                    dp[i][j] = true;
+                else if (s.charAt(i) == s.charAt(j) && (j - i == 1 || dp[i + 1][j - 1]))
+                    dp[i][j] = true;
+        return dp;
+    }
+
+    // 1143
+    public int longestCommonSubsequence(String text1, String text2) {
+        int length1 = text1.length();
+        int length2 = text2.length();
+        int[][] dp = new int[length1 + 1][length2 + 1];
+        // 不需要考虑临界值, 因为i, j从1开始,即便是临界值,也是符合这个DP方程的.
+        for (int i = 1; i <= length1; i++)
+            for (int j = 1; j <= length2; j++)
+                if (text1.charAt(i - 1) != text2.charAt(j - 1))
+                    dp[i][j] = Math.max(dp[i][j - 1], dp[i - 1][j]);
+                else
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+        return dp[length1][length2];
+    }
+
+    // 376 贪心算法
+    public int wiggleMaxLength(int[] nums) {
+        if (nums.length < 2)
+            return nums.length;
+        int current = nums[0];
+        boolean first = true;
+        boolean flag = false;   // 这里初始化为什么都无所谓,反正first的时候会重置
+        // 但不初始化编译器会以为flag在使用的时候可能没有初始化,只好礼貌性初始化一哈了
+        // true for nums[i] - nums[prev] > 0,  false for nums[i] - nums[prev] < 0
+        int res = 1;
+        for (int i = 1; i < nums.length; i++) {
+            if (nums[i] == current)
+                continue;
+            if (first) {
+                flag = nums[i] - current > 0 ? true : false;
+                first = false;
+                res++;
+                current = nums[i];
+                continue;
+            }
+            if (((nums[i] < current) && flag) || ((nums[i] > current) && !flag)) {
+                flag = !flag;
+                res++;
+                current = nums[i];
+            }
+            if ((flag && nums[i] > current) || (!flag && nums[i] < current))
+                current = nums[i];
+            // 不能找到一个current就满足,要找到最好的current,即上升序列时,如果是连续的上升,current应该一直取最大的那个新值
+        }
+        return res;
+    }
+
+    // 376 DP
+    public int wiggleMaxLength1(int[] nums) {
+        int n = nums.length;
+        if (n < 2)
+            return n;
+        int up = 1, down = 1;
+        for (int i = 1; i < n; i++)
+            if (nums[i] > nums[i - 1])
+                up = down + 1;
+            else if (nums[i] < nums[i - 1])
+                down = up + 1;
+        return Math.max(up, down);
+    }
+
+    // 491
+    public List<List<Integer>> findSubsequences(int[] nums) {
+        List<List<Integer>> result = new ArrayList<>();
+        if (nums.length < 2)
+            return result;
+        List<Integer> current = new ArrayList<>();
+        HashSet<List<Integer>> set = new HashSet<>();
+        findSubsequencesHelper(set, current, nums,0, Integer.MIN_VALUE);
+        result = new ArrayList<>(set);
+        return result;
+    }
+
+    public void findSubsequencesHelper(HashSet<List<Integer>> result, List<Integer> current, int[] nums,
+                                       int nextIndex, int prev) {
+        if (current.size() >= 2)
+            result.add(new ArrayList<>(current));
+
+        HashSet<Integer> set = new HashSet<>();         // 记录本层的情况,本层如果重复是可以剪枝的
+        for (int i = nextIndex; i < nums.length; i++) {
+            // 一开始想着直接在if里判断nums[i] == nums[i - 1],但这并不正确
+            // 我们需要减去的是同一层的重复元素,但不同层是可以相同的
+            // 如果重复元素越多,set做出的剪枝提升会越明显
+            if (nums[i] < prev || set.contains(nums[i]))
+                continue;
+            current.add(nums[i]);
+            set.add(nums[i]);
+            findSubsequencesHelper(result, current, nums,i + 1, nums[i]);
+            current.remove(current.size() - 1);
+        }
+    }
+
     public static void main(String[] args) {
         Test test = new Test();
-        test.reverseString(new char[]{});
-//        System.out.println(test.reverseStr("avcdefg", 2));
-//        System.out.println(test.isMatch("b", "ab*b"));
-//        List<Integer> list = test.countSteppingNumbers(0, 0);
-//        for (int i = 0; i < list.size(); i++) {
-//            System.out.print(list.get(i) + " ");
-//            if (i % 25 == 0)
-//                System.out.println();
-//        }
-//        System.out.println();
-//        System.out.println(2 * Math.pow(10, 8));
-//         System.out.println(Integer.MAX_VALUE);
-
-//        int[] ints = {0,1,2,3,4,5,6,7,8,9,10,12,21,23,32,34,43,45,54,56,65,67,76,78,87,89,98,101,121,123,210,212,232,234,321,323,343,345,432,434,454,456,543,545,565,567,654,656,676,678,765,767,787,789,876,878,898,987,989,1010,1012,1210,1212,1232,1234,2101,2121,2123,2321,2323,2343,2345,3210,3212,3232,3234,3432,3434,3454,3456,4321,4323,4343,4345,4543,4545,4565,4567,5432,5434,5454,5456,5654,5656,5676,5678,6543,6545,6565,6567,6765,6767,6787,6789,7654,7656,7676,7678,7876,7878,7898,8765,8767,8787,8789,8987,8989,9876,9878,9898,10101,10121,10123,12101,12121,12123,12321,12323,12343,12345,21010,21012,21210,21212,21232,21234,23210,23212,23232,23234,23432,23434,23454,23456,32101,32121,32123,32321,32323,32343,32345,34321,34323,34343,34345,34543,34545,34565,34567,43210,43212,43232,43234,43432,43434,43454,43456,45432,45434,45454,45456,45654,45656,45676,45678,54321,54323,54343,54345,54543,54545,54565,54567,56543,56545,56565,56567,56765,56767,56787,56789,65432,65434,65454,65456,65654,65656,65676,65678,67654,67656,67676,67678,67876,67878,67898,76543,76545,76565,76567,76765,76767,76787,76789,78765,78767,78787,78789,78987,78989,87654,87656,87676,87678,87876,87878,87898,89876,89878,89898,98765,98767,98787,98789,98987,98989,101010,101012,101210,101212,101232,101234,121010,121012,121210,121212,121232,121234,123210,123212,123232,123234,123432,123434,123454,123456,210101,210121,210123,212101,212121,212123,212321,212323,212343,212345,232101,232121,232123,232321,232323,232343,232345,234321,234323,234343,234345,234543,234545,234565,234567,321010,321012,321210,321212,321232,321234,323210,323212,323232,323234,323432,323434,323454,323456,343210,343212,343232,343234,343432,343434,343454,343456,345432,345434,345454,345456,345654,345656,345676,345678,432101,432121,432123,432321,432323,432343,432345,434321,434323,434343,434345,434543,434545,434565,434567,454321,454323,454343,454345,454543,454545,454565,454567,456543,456545,456565,456567,456765,456767,456787,456789,543210,543212,543232,543234,543432,543434,543454,543456,545432,545434,545454,545456,545654,545656,545676,545678,565432,565434,565454,565456,565654,565656,565676,565678,567654,567656,567676,567678,567876,567878,567898,654321,654323,654343,654345,654543,654545,654565,654567,656543,656545,656565,656567,656765,656767,656787,656789,676543,676545,676565,676567,676765,676767,676787,676789,678765,678767,678787,678789,678987,678989,765432,765434,765454,765456,765654,765656,765676,765678,767654,767656,767676,767678,767876,767878,767898,787654,787656,787676,787678,787876,787878,787898,789876,789878,789898,876543,876545,876565,876567,876765,876767,876787,876789,878765,878767,878787,878789,878987,878989,898765,898767,898787,898789,898987,898989,987654,987656,987676,987678,987876,987878,987898,989876,989878,989898,1010101,1010121,1010123,1012101,1012121,1012123,1012321,1012323,1012343,1012345,1210101,1210121,1210123,1212101,1212121,1212123,1212321,1212323,1212343,1212345,1232101,1232121,1232123,1232321,1232323,1232343,1232345,1234321,1234323,1234343,1234345,1234543,1234545,1234565,1234567,2101010,2101012,2101210,2101212,2101232,2101234,2121010,2121012,2121210,2121212,2121232,2121234,2123210,2123212,2123232,2123234,2123432,2123434,2123454,2123456,2321010,2321012,2321210,2321212,2321232,2321234,2323210,2323212,2323232,2323234,2323432,2323434,2323454,2323456,2343210,2343212,2343232,2343234,2343432,2343434,2343454,2343456,2345432,2345434,2345454,2345456,2345654,2345656,2345676,2345678,3210101,3210121,3210123,3212101,3212121,3212123,3212321,3212323,3212343,3212345,3232101,3232121,3232123,3232321,3232323,3232343,3232345,3234321,3234323,3234343,3234345,3234543,3234545,3234565,3234567,3432101,3432121,3432123,3432321,3432323,3432343,3432345,3434321,3434323,3434343,3434345,3434543,3434545,3434565,3434567,3454321,3454323,3454343,3454345,3454543,3454545,3454565,3454567,3456543,3456545,3456565,3456567,3456765,3456767,3456787,3456789,4321010,4321012,4321210,4321212,4321232,4321234,4323210,4323212,4323232,4323234,4323432,4323434,4323454,4323456,4343210,4343212,4343232,4343234,4343432,4343434,4343454,4343456,4345432,4345434,4345454,4345456,4345654,4345656,4345676,4345678,4543210,4543212,4543232,4543234,4543432,4543434,4543454,4543456,4545432,4545434,4545454,4545456,4545654,4545656,4545676,4545678,4565432,4565434,4565454,4565456,4565654,4565656,4565676,4565678,4567654,4567656,4567676,4567678,4567876,4567878,4567898,5432101,5432121,5432123,5432321,5432323,5432343,5432345,5434321,5434323,5434343,5434345,5434543,5434545,5434565,5434567,5454321,5454323,5454343,5454345,5454543,5454545,5454565,5454567,5456543,5456545,5456565,5456567,5456765,5456767,5456787,5456789,5654321,5654323,5654343,5654345,5654543,5654545,5654565,5654567,5656543,5656545,5656565,5656567,5656765,5656767,5656787,5656789,5676543,5676545,5676565,5676567,5676765,5676767,5676787,5676789,5678765,5678767,5678787,5678789,5678987,5678989,6543210,6543212,6543232,6543234,6543432,6543434,6543454,6543456,6545432,6545434,6545454,6545456,6545654,6545656,6545676,6545678,6565432,6565434,6565454,6565456,6565654,6565656,6565676,6565678,6567654,6567656,6567676,6567678,6567876,6567878,6567898,6765432,6765434,6765454,6765456,6765654,6765656,6765676,6765678,6767654,6767656,6767676,6767678,6767876,6767878,6767898,6787654,6787656,6787676,6787678,6787876,6787878,6787898,6789876,6789878,6789898,7654321,7654323,7654343,7654345,7654543,7654545,7654565,7654567,7656543,7656545,7656565,7656567,7656765,7656767,7656787,7656789,7676543,7676545,7676565,7676567,7676765,7676767,7676787,7676789,7678765,7678767,7678787,7678789,7678987,7678989,7876543,7876545,7876565,7876567,7876765,7876767,7876787,7876789,7878765,7878767,7878787,7878789,7878987,7878989,7898765,7898767,7898787,7898789,7898987,7898989,8765432,8765434,8765454,8765456,8765654,8765656,8765676,8765678,8767654,8767656,8767676,8767678,8767876,8767878,8767898,8787654,8787656,8787676,8787678,8787876,8787878,8787898,8789876,8789878,8789898,8987654,8987656,8987676,8987678,8987876,8987878,8987898,8989876,8989878,8989898,9876543,9876545,9876565,9876567,9876765,9876767,9876787,9876789,9878765,9878767,9878787,9878789,9878987,9878989,9898765,9898767,9898787,9898789,9898987,9898989,10101010,10101012,10101210,10101212,10101232,10101234,10121010,10121012,10121210,10121212,10121232,10121234,10123210,10123212,10123232,10123234,10123432,10123434,10123454,10123456,12101010,12101012,12101210,12101212,12101232,12101234,12121010,12121012,12121210,12121212,12121232,12121234,12123210,12123212,12123232,12123234,12123432,12123434,12123454,12123456,12321010,12321012,12321210,12321212,12321232,12321234,12323210,12323212,12323232,12323234,12323432,12323434,12323454,12323456,12343210,12343212,12343232,12343234,12343432,12343434,12343454,12343456,12345432,12345434,12345454,12345456,12345654,12345656,12345676,12345678,21010101,21010121,21010123,21012101,21012121,21012123,21012321,21012323,21012343,21012345,21210101,21210121,21210123,21212101,21212121,21212123,21212321,21212323,21212343,21212345,21232101,21232121,21232123,21232321,21232323,21232343,21232345,21234321,21234323,21234343,21234345,21234543,21234545,21234565,21234567,23210101,23210121,23210123,23212101,23212121,23212123,23212321,23212323,23212343,23212345,23232101,23232121,23232123,23232321,23232323,23232343,23232345,23234321,23234323,23234343,23234345,23234543,23234545,23234565,23234567,23432101,23432121,23432123,23432321,23432323,23432343,23432345,23434321,23434323,23434343,23434345,23434543,23434545,23434565,23434567,23454321,23454323,23454343,23454345,23454543,23454545,23454565,23454567,23456543,23456545,23456565,23456567,23456765,23456767,23456787,23456789,32101010,32101012,32101210,32101212,32101232,32101234,32121010,32121012,32121210,32121212,32121232,32121234,32123210,32123212,32123232,32123234,32123432,32123434,32123454,32123456,32321010,32321012,32321210,32321212,32321232,32321234,32323210,32323212,32323232,32323234,32323432,32323434,32323454,32323456,32343210,32343212,32343232,32343234,32343432,32343434,32343454,32343456,32345432,32345434,32345454,32345456,32345654,32345656,32345676,32345678,34321010,34321012,34321210,34321212,34321232,34321234,34323210,34323212,34323232,34323234,34323432,34323434,34323454,34323456,34343210,34343212,34343232,34343234,34343432,34343434,34343454,34343456,34345432,34345434,34345454,34345456,34345654,34345656,34345676,34345678,34543210,34543212,34543232,34543234,34543432,34543434,34543454,34543456,34545432,34545434,34545454,34545456,34545654,34545656,34545676,34545678,34565432,34565434,34565454,34565456,34565654,34565656,34565676,34565678,34567654,34567656,34567676,34567678,34567876,34567878,34567898,43210101,43210121,43210123,43212101,43212121,43212123,43212321,43212323,43212343,43212345,43232101,43232121,43232123,43232321,43232323,43232343,43232345,43234321,43234323,43234343,43234345,43234543,43234545,43234565,43234567,43432101,43432121,43432123,43432321,43432323,43432343,43432345,43434321,43434323,43434343,43434345,43434543,43434545,43434565,43434567,43454321,43454323,43454343,43454345,43454543,43454545,43454565,43454567,43456543,43456545,43456565,43456567,43456765,43456767,43456787,43456789,45432101,45432121,45432123,45432321,45432323,45432343,45432345,45434321,45434323,45434343,45434345,45434543,45434545,45434565,45434567,45454321,45454323,45454343,45454345,45454543,45454545,45454565,45454567,45456543,45456545,45456565,45456567,45456765,45456767,45456787,45456789,45654321,45654323,45654343,45654345,45654543,45654545,45654565,45654567,45656543,45656545,45656565,45656567,45656765,45656767,45656787,45656789,45676543,45676545,45676565,45676567,45676765,45676767,45676787,45676789,45678765,45678767,45678787,45678789,45678987,45678989,54321010,54321012,54321210,54321212,54321232,54321234,54323210,54323212,54323232,54323234,54323432,54323434,54323454,54323456,54343210,54343212,54343232,54343234,54343432,54343434,54343454,54343456,54345432,54345434,54345454,54345456,54345654,54345656,54345676,54345678,54543210,54543212,54543232,54543234,54543432,54543434,54543454,54543456,54545432,54545434,54545454,54545456,54545654,54545656,54545676,54545678,54565432,54565434,54565454,54565456,54565654,54565656,54565676,54565678,54567654,54567656,54567676,54567678,54567876,54567878,54567898,56543210,56543212,56543232,56543234,56543432,56543434,56543454,56543456,56545432,56545434,56545454,56545456,56545654,56545656,56545676,56545678,56565432,56565434,56565454,56565456,56565654,56565656,56565676,56565678,56567654,56567656,56567676,56567678,56567876,56567878,56567898,56765432,56765434,56765454,56765456,56765654,56765656,56765676,56765678,56767654,56767656,56767676,56767678,56767876,56767878,56767898,56787654,56787656,56787676,56787678,56787876,56787878,56787898,56789876,56789878,56789898,65432101,65432121,65432123,65432321,65432323,65432343,65432345,65434321,65434323,65434343,65434345,65434543,65434545,65434565,65434567,65454321,65454323,65454343,65454345,65454543,65454545,65454565,65454567,65456543,65456545,65456565,65456567,65456765,65456767,65456787,65456789,65654321,65654323,65654343,65654345,65654543,65654545,65654565,65654567,65656543,65656545,65656565,65656567,65656765,65656767,65656787,65656789,65676543,65676545,65676565,65676567,65676765,65676767,65676787,65676789,65678765,65678767,65678787,65678789,65678987,65678989,67654321,67654323,67654343,67654345,67654543,67654545,67654565,67654567,67656543,67656545,67656565,67656567,67656765,67656767,67656787,67656789,67676543,67676545,67676565,67676567,67676765,67676767,67676787,67676789,67678765,67678767,67678787,67678789,67678987,67678989,67876543,67876545,67876565,67876567,67876765,67876767,67876787,67876789,67878765,67878767,67878787,67878789,67878987,67878989,67898765,67898767,67898787,67898789,67898987,67898989,76543210,76543212,76543232,76543234,76543432,76543434,76543454,76543456,76545432,76545434,76545454,76545456,76545654,76545656,76545676,76545678,76565432,76565434,76565454,76565456,76565654,76565656,76565676,76565678,76567654,76567656,76567676,76567678,76567876,76567878,76567898,76765432,76765434,76765454,76765456,76765654,76765656,76765676,76765678,76767654,76767656,76767676,76767678,76767876,76767878,76767898,76787654,76787656,76787676,76787678,76787876,76787878,76787898,76789876,76789878,76789898,78765432,78765434,78765454,78765456,78765654,78765656,78765676,78765678,78767654,78767656,78767676,78767678,78767876,78767878,78767898,78787654,78787656,78787676,78787678,78787876,78787878,78787898,78789876,78789878,78789898,78987654,78987656,78987676,78987678,78987876,78987878,78987898,78989876,78989878,78989898,87654321,87654323,87654343,87654345,87654543,87654545,87654565,87654567,87656543,87656545,87656565,87656567,87656765,87656767,87656787,87656789,87676543,87676545,87676565,87676567,87676765,87676767,87676787,87676789,87678765,87678767,87678787,87678789,87678987,87678989,87876543,87876545,87876565,87876567,87876765,87876767,87876787,87876789,87878765,87878767,87878787,87878789,87878987,87878989,87898765,87898767,87898787,87898789,87898987,87898989,89876543,89876545,89876565,89876567,89876765,89876767,89876787,89876789,89878765,89878767,89878787,89878789,89878987,89878989,89898765,89898767,89898787,89898789,89898987,89898989,98765432,98765434,98765454,98765456,98765654,98765656,98765676,98765678,98767654,98767656,98767676,98767678,98767876,98767878,98767898,98787654,98787656,98787676,98787678,98787876,98787878,98787898,98789876,98789878,98789898,98987654,98987656,98987676,98987678,98987876,98987878,98987898,98989876,98989878,98989898,101010101,101010121,101010123,101012101,101012121,101012123,101012321,101012323,101012343,101012345,101210101,101210121,101210123,101212101,101212121,101212123,101212321,101212323,101212343,101212345,101232101,101232121,101232123,101232321,101232323,101232343,101232345,101234321,101234323,101234343,101234345,101234543,101234545,101234565,101234567,121010101,121010121,121010123,121012101,121012121,121012123,121012321,121012323,121012343,121012345,121210101,121210121,121210123,121212101,121212121,121212123,121212321,121212323,121212343,121212345,121232101,121232121,121232123,121232321,121232323,121232343,121232345,121234321,121234323,121234343,121234345,121234543,121234545,121234565,121234567,123210101,123210121,123210123,123212101,123212121,123212123,123212321,123212323,123212343,123212345,123232101,123232121,123232123,123232321,123232323,123232343,123232345,123234321,123234323,123234343,123234345,123234543,123234545,123234565,123234567,123432101,123432121,123432123,123432321,123432323,123432343,123432345,123434321,123434323,123434343,123434345,123434543,123434545,123434565,123434567,123454321,123454323,123454343,123454345,123454543,123454545,123454565,123454567,123456543,123456545,123456565,123456567,123456765,123456767,123456787,123456789,210101010,210101012,210101210,210101212,210101232,210101234,210121010,210121012,210121210,210121212,210121232,210121234,210123210,210123212,210123232,210123234,210123432,210123434,210123454,210123456,212101010,212101012,212101210,212101212,212101232,212101234,212121010,212121012,212121210,212121212,212121232,212121234,212123210,212123212,212123232,212123234,212123432,212123434,212123454,212123456,212321010,212321012,212321210,212321212,212321232,212321234,212323210,212323212,212323232,212323234,212323432,212323434,212323454,212323456,212343210,212343212,212343232,212343234,212343432,212343434,212343454,212343456,212345432,212345434,212345454,212345456,212345654,212345656,212345676,212345678,232101010,232101012,232101210,232101212,232101232,232101234,232121010,232121012,232121210,232121212,232121232,232121234,232123210,232123212,232123232,232123234,232123432,232123434,232123454,232123456,232321010,232321012,232321210,232321212,232321232,232321234,232323210,232323212,232323232,232323234,232323432,232323434,232323454,232323456,232343210,232343212,232343232,232343234,232343432,232343434,232343454,232343456,232345432,232345434,232345454,232345456,232345654,232345656,232345676,232345678,234321010,234321012,234321210,234321212,234321232,234321234,234323210,234323212,234323232,234323234,234323432,234323434,234323454,234323456,234343210,234343212,234343232,234343234,234343432,234343434,234343454,234343456,234345432,234345434,234345454,234345456,234345654,234345656,234345676,234345678,234543210,234543212,234543232,234543234,234543432,234543434,234543454,234543456,234545432,234545434,234545454,234545456,234545654,234545656,234545676,234545678,234565432,234565434,234565454,234565456,234565654,234565656,234565676,234565678,234567654,234567656,234567676,234567678,234567876,234567878,234567898,321010101,321010121,321010123,321012101,321012121,321012123,321012321,321012323,321012343,321012345,321210101,321210121,321210123,321212101,321212121,321212123,321212321,321212323,321212343,321212345,321232101,321232121,321232123,321232321,321232323,321232343,321232345,321234321,321234323,321234343,321234345,321234543,321234545,321234565,321234567,323210101,323210121,323210123,323212101,323212121,323212123,323212321,323212323,323212343,323212345,323232101,323232121,323232123,323232321,323232323,323232343,323232345,323234321,323234323,323234343,323234345,323234543,323234545,323234565,323234567,323432101,323432121,323432123,323432321,323432323,323432343,323432345,323434321,323434323,323434343,323434345,323434543,323434545,323434565,323434567,323454321,323454323,323454343,323454345,323454543,323454545,323454565,323454567,323456543,323456545,323456565,323456567,323456765,323456767,323456787,323456789,343210101,343210121,343210123,343212101,343212121,343212123,343212321,343212323,343212343,343212345,343232101,343232121,343232123,343232321,343232323,343232343,343232345,343234321,343234323,343234343,343234345,343234543,343234545,343234565,343234567,343432101,343432121,343432123,343432321,343432323,343432343,343432345,343434321,343434323,343434343,343434345,343434543,343434545,343434565,343434567,343454321,343454323,343454343,343454345,343454543,343454545,343454565,343454567,343456543,343456545,343456565,343456567,343456765,343456767,343456787,343456789,345432101,345432121,345432123,345432321,345432323,345432343,345432345,345434321,345434323,345434343,345434345,345434543,345434545,345434565,345434567,345454321,345454323,345454343,345454345,345454543,345454545,345454565,345454567,345456543,345456545,345456565,345456567,345456765,345456767,345456787,345456789,345654321,345654323,345654343,345654345,345654543,345654545,345654565,345654567,345656543,345656545,345656565,345656567,345656765,345656767,345656787,345656789,345676543,345676545,345676565,345676567,345676765,345676767,345676787,345676789,345678765,345678767,345678787,345678789,345678987,345678989,432101010,432101012,432101210,432101212,432101232,432101234,432121010,432121012,432121210,432121212,432121232,432121234,432123210,432123212,432123232,432123234,432123432,432123434,432123454,432123456,432321010,432321012,432321210,432321212,432321232,432321234,432323210,432323212,432323232,432323234,432323432,432323434,432323454,432323456,432343210,432343212,432343232,432343234,432343432,432343434,432343454,432343456,432345432,432345434,432345454,432345456,432345654,432345656,432345676,432345678,434321010,434321012,434321210,434321212,434321232,434321234,434323210,434323212,434323232,434323234,434323432,434323434,434323454,434323456,434343210,434343212,434343232,434343234,434343432,434343434,434343454,434343456,434345432,434345434,434345454,434345456,434345654,434345656,434345676,434345678,434543210,434543212,434543232,434543234,434543432,434543434,434543454,434543456,434545432,434545434,434545454,434545456,434545654,434545656,434545676,434545678,434565432,434565434,434565454,434565456,434565654,434565656,434565676,434565678,434567654,434567656,434567676,434567678,434567876,434567878,434567898,454321010,454321012,454321210,454321212,454321232,454321234,454323210,454323212,454323232,454323234,454323432,454323434,454323454,454323456,454343210,454343212,454343232,454343234,454343432,454343434,454343454,454343456,454345432,454345434,454345454,454345456,454345654,454345656,454345676,454345678,454543210,454543212,454543232,454543234,454543432,454543434,454543454,454543456,454545432,454545434,454545454,454545456,454545654,454545656,454545676,454545678,454565432,454565434,454565454,454565456,454565654,454565656,454565676,454565678,454567654,454567656,454567676,454567678,454567876,454567878,454567898,456543210,456543212,456543232,456543234,456543432,456543434,456543454,456543456,456545432,456545434,456545454,456545456,456545654,456545656,456545676,456545678,456565432,456565434,456565454,456565456,456565654,456565656,456565676,456565678,456567654,456567656,456567676,456567678,456567876,456567878,456567898,456765432,456765434,456765454,456765456,456765654,456765656,456765676,456765678,456767654,456767656,456767676,456767678,456767876,456767878,456767898,456787654,456787656,456787676,456787678,456787876,456787878,456787898,456789876,456789878,456789898,543210101,543210121,543210123,543212101,543212121,543212123,543212321,543212323,543212343,543212345,543232101,543232121,543232123,543232321,543232323,543232343,543232345,543234321,543234323,543234343,543234345,543234543,543234545,543234565,543234567,543432101,543432121,543432123,543432321,543432323,543432343,543432345,543434321,543434323,543434343,543434345,543434543,543434545,543434565,543434567,543454321,543454323,543454343,543454345,543454543,543454545,543454565,543454567,543456543,543456545,543456565,543456567,543456765,543456767,543456787,543456789,545432101,545432121,545432123,545432321,545432323,545432343,545432345,545434321,545434323,545434343,545434345,545434543,545434545,545434565,545434567,545454321,545454323,545454343,545454345,545454543,545454545,545454565,545454567,545456543,545456545,545456565,545456567,545456765,545456767,545456787,545456789,545654321,545654323,545654343,545654345,545654543,545654545,545654565,545654567,545656543,545656545,545656565,545656567,545656765,545656767,545656787,545656789,545676543,545676545,545676565,545676567,545676765,545676767,545676787,545676789,545678765,545678767,545678787,545678789,545678987,545678989,565432101,565432121,565432123,565432321,565432323,565432343,565432345,565434321,565434323,565434343,565434345,565434543,565434545,565434565,565434567,565454321,565454323,565454343,565454345,565454543,565454545,565454565,565454567,565456543,565456545,565456565,565456567,565456765,565456767,565456787,565456789,565654321,565654323,565654343,565654345,565654543,565654545,565654565,565654567,565656543,565656545,565656565,565656567,565656765,565656767,565656787,565656789,565676543,565676545,565676565,565676567,565676765,565676767,565676787,565676789,565678765,565678767,565678787,565678789,565678987,565678989,567654321,567654323,567654343,567654345,567654543,567654545,567654565,567654567,567656543,567656545,567656565,567656567,567656765,567656767,567656787,567656789,567676543,567676545,567676565,567676567,567676765,567676767,567676787,567676789,567678765,567678767,567678787,567678789,567678987,567678989,567876543,567876545,567876565,567876567,567876765,567876767,567876787,567876789,567878765,567878767,567878787,567878789,567878987,567878989,567898765,567898767,567898787,567898789,567898987,567898989,654321010,654321012,654321210,654321212,654321232,654321234,654323210,654323212,654323232,654323234,654323432,654323434,654323454,654323456,654343210,654343212,654343232,654343234,654343432,654343434,654343454,654343456,654345432,654345434,654345454,654345456,654345654,654345656,654345676,654345678,654543210,654543212,654543232,654543234,654543432,654543434,654543454,654543456,654545432,654545434,654545454,654545456,654545654,654545656,654545676,654545678,654565432,654565434,654565454,654565456,654565654,654565656,654565676,654565678,654567654,654567656,654567676,654567678,654567876,654567878,654567898,656543210,656543212,656543232,656543234,656543432,656543434,656543454,656543456,656545432,656545434,656545454,656545456,656545654,656545656,656545676,656545678,656565432,656565434,656565454,656565456,656565654,656565656,656565676,656565678,656567654,656567656,656567676,656567678,656567876,656567878,656567898,656765432,656765434,656765454,656765456,656765654,656765656,656765676,656765678,656767654,656767656,656767676,656767678,656767876,656767878,656767898,656787654,656787656,656787676,656787678,656787876,656787878,656787898,656789876,656789878,656789898,676543210,676543212,676543232,676543234,676543432,676543434,676543454,676543456,676545432,676545434,676545454,676545456,676545654,676545656,676545676,676545678,676565432,676565434,676565454,676565456,676565654,676565656,676565676,676565678,676567654,676567656,676567676,676567678,676567876,676567878,676567898,676765432,676765434,676765454,676765456,676765654,676765656,676765676,676765678,676767654,676767656,676767676,676767678,676767876,676767878,676767898,676787654,676787656,676787676,676787678,676787876,676787878,676787898,676789876,676789878,676789898,678765432,678765434,678765454,678765456,678765654,678765656,678765676,678765678,678767654,678767656,678767676,678767678,678767876,678767878,678767898,678787654,678787656,678787676,678787678,678787876,678787878,678787898,678789876,678789878,678789898,678987654,678987656,678987676,678987678,678987876,678987878,678987898,678989876,678989878,678989898,765432101,765432121,765432123,765432321,765432323,765432343,765432345,765434321,765434323,765434343,765434345,765434543,765434545,765434565,765434567,765454321,765454323,765454343,765454345,765454543,765454545,765454565,765454567,765456543,765456545,765456565,765456567,765456765,765456767,765456787,765456789,765654321,765654323,765654343,765654345,765654543,765654545,765654565,765654567,765656543,765656545,765656565,765656567,765656765,765656767,765656787,765656789,765676543,765676545,765676565,765676567,765676765,765676767,765676787,765676789,765678765,765678767,765678787,765678789,765678987,765678989,767654321,767654323,767654343,767654345,767654543,767654545,767654565,767654567,767656543,767656545,767656565,767656567,767656765,767656767,767656787,767656789,767676543,767676545,767676565,767676567,767676765,767676767,767676787,767676789,767678765,767678767,767678787,767678789,767678987,767678989,767876543,767876545,767876565,767876567,767876765,767876767,767876787,767876789,767878765,767878767,767878787,767878789,767878987,767878989,767898765,767898767,767898787,767898789,767898987,767898989,787654321,787654323,787654343,787654345,787654543,787654545,787654565,787654567,787656543,787656545,787656565,787656567,787656765,787656767,787656787,787656789,787676543,787676545,787676565,787676567,787676765,787676767,787676787,787676789,787678765,787678767,787678787,787678789,787678987,787678989,787876543,787876545,787876565,787876567,787876765,787876767,787876787,787876789,787878765,787878767,787878787,787878789,787878987,787878989,787898765,787898767,787898787,787898789,787898987,787898989,789876543,789876545,789876565,789876567,789876765,789876767,789876787,789876789,789878765,789878767,789878787,789878789,789878987,789878989,789898765,789898767,789898787,789898789,789898987,789898989,876543210,876543212,876543232,876543234,876543432,876543434,876543454,876543456,876545432,876545434,876545454,876545456,876545654,876545656,876545676,876545678,876565432,876565434,876565454,876565456,876565654,876565656,876565676,876565678,876567654,876567656,876567676,876567678,876567876,876567878,876567898,876765432,876765434,876765454,876765456,876765654,876765656,876765676,876765678,876767654,876767656,876767676,876767678,876767876,876767878,876767898,876787654,876787656,876787676,876787678,876787876,876787878,876787898,876789876,876789878,876789898,878765432,878765434,878765454,878765456,878765654,878765656,878765676,878765678,878767654,878767656,878767676,878767678,878767876,878767878,878767898,878787654,878787656,878787676,878787678,878787876,878787878,878787898,878789876,878789878,878789898,878987654,878987656,878987676,878987678,878987876,878987878,878987898,878989876,878989878,878989898,898765432,898765434,898765454,898765456,898765654,898765656,898765676,898765678,898767654,898767656,898767676,898767678,898767876,898767878,898767898,898787654,898787656,898787676,898787678,898787876,898787878,898787898,898789876,898789878,898789898,898987654,898987656,898987676,898987678,898987876,898987878,898987898,898989876,898989878,898989898,987654321,987654323,987654343,987654345,987654543,987654545,987654565,987654567,987656543,987656545,987656565,987656567,987656765,987656767,987656787,987656789,987676543,987676545,987676565,987676567,987676765,987676767,987676787,987676789,987678765,987678767,987678787,987678789,987678987,987678989,987876543,987876545,987876565,987876567,987876765,987876767,987876787,987876789,987878765,987878767,987878787,987878789,987878987,987878989,987898765,987898767,987898787,987898789,987898987,987898989,989876543,989876545,989876565,989876567,989876765,989876767,989876787,989876789,989878765,989878767,989878787,989878789,989878987,989878989,989898765,989898767,989898787,989898789,989898987,989898989,1010101010,1010101012,1010101210,1010101212,1010101232,1010101234,1010121010,1010121012,1010121210,1010121212,1010121232,1010121234,1010123210,1010123212,1010123232,1010123234,1010123432,1010123434,1010123454,1010123456,1012101010,1012101012,1012101210,1012101212,1012101232,1012101234,1012121010,1012121012,1012121210,1012121212,1012121232,1012121234,1012123210,1012123212,1012123232,1012123234,1012123432,1012123434,1012123454,1012123456,1012321010,1012321012,1012321210,1012321212,1012321232,1012321234,1012323210,1012323212,1012323232,1012323234,1012323432,1012323434,1012323454,1012323456,1012343210,1012343212,1012343232,1012343234,1012343432,1012343434,1012343454,1012343456,1012345432,1012345434,1012345454,1012345456,1012345654,1012345656,1012345676,1012345678,1210101010,1210101012,1210101210,1210101212,1210101232,1210101234,1210121010,1210121012,1210121210,1210121212,1210121232,1210121234,1210123210,1210123212,1210123232,1210123234,1210123432,1210123434,1210123454,1210123456,1212101010,1212101012,1212101210,1212101212,1212101232,1212101234,1212121010,1212121012,1212121210,1212121212,1212121232,1212121234,1212123210,1212123212,1212123232,1212123234,1212123432,1212123434,1212123454,1212123456,1212321010,1212321012,1212321210,1212321212,1212321232,1212321234,1212323210,1212323212,1212323232,1212323234,1212323432,1212323434,1212323454,1212323456,1212343210,1212343212,1212343232,1212343234,1212343432,1212343434,1212343454,1212343456,1212345432,1212345434,1212345454,1212345456,1212345654,1212345656,1212345676,1212345678,1232101010,1232101012,1232101210,1232101212,1232101232,1232101234,1232121010,1232121012,1232121210,1232121212,1232121232,1232121234,1232123210,1232123212,1232123232,1232123234,1232123432,1232123434,1232123454,1232123456,1232321010,1232321012,1232321210,1232321212,1232321232,1232321234,1232323210,1232323212,1232323232,1232323234,1232323432,1232323434,1232323454,1232323456,1232343210,1232343212,1232343232,1232343234,1232343432,1232343434,1232343454,1232343456,1232345432,1232345434,1232345454,1232345456,1232345654,1232345656,1232345676,1232345678,1234321010,1234321012,1234321210,1234321212,1234321232,1234321234,1234323210,1234323212,1234323232,1234323234,1234323432,1234323434,1234323454,1234323456,1234343210,1234343212,1234343232,1234343234,1234343432,1234343434,1234343454,1234343456,1234345432,1234345434,1234345454,1234345456,1234345654,1234345656,1234345676,1234345678,1234543210,1234543212,1234543232,1234543234,1234543432,1234543434,1234543454,1234543456,1234545432,1234545434,1234545454,1234545456,1234545654,1234545656,1234545676,1234545678,1234565432,1234565434,1234565454,1234565456,1234565654,1234565656,1234565676,1234565678,1234567654,1234567656,1234567676,1234567678,1234567876,1234567878,1234567898};
-//        System.out.println(ints.length);
-//
-//        int[] ints1 = {0,1,2,3,4,5,6,7,8,9,10,12,21,23,32,34,43,45,54,56,65,67,76,78,87,89,98,101,121,123,210,212,232,234,321,323,343,345,432,434,454,456,543,545,565,567,654,656,676,678,765,767,787,789,876,878,898,987,989,1010,1012,1210,1212,1232,1234,2101,2121,2123,2321,2323,2343,2345,3210,3212,3232,3234,3432,3434,3454,3456,4321,4323,4343,4345,4543,4545,4565,4567,5432,5434,5454,5456,5654,5656,5676,5678,6543,6545,6565,6567,6765,6767,6787,6789,7654,7656,7676,7678,7876,7878,7898,8765,8767,8787,8789,8987,8989,9876,9878,9898,10101,10121,10123,12101,12121,12123,12321,12323,12343,12345,21010,21012,21210,21212,21232,21234,23210,23212,23232,23234,23432,23434,23454,23456,32101,32121,32123,32321,32323,32343,32345,34321,34323,34343,34345,34543,34545,34565,34567,43210,43212,43232,43234,43432,43434,43454,43456,45432,45434,45454,45456,45654,45656,45676,45678,54321,54323,54343,54345,54543,54545,54565,54567,56543,56545,56565,56567,56765,56767,56787,56789,65432,65434,65454,65456,65654,65656,65676,65678,67654,67656,67676,67678,67876,67878,67898,76543,76545,76565,76567,76765,76767,76787,76789,78765,78767,78787,78789,78987,78989,87654,87656,87676,87678,87876,87878,87898,89876,89878,89898,98765,98767,98787,98789,98987,98989,101010,101012,101210,101212,101232,101234,121010,121012,121210,121212,121232,121234,123210,123212,123232,123234,123432,123434,123454,123456,210101,210121,210123,212101,212121,212123,212321,212323,212343,212345,232101,232121,232123,232321,232323,232343,232345,234321,234323,234343,234345,234543,234545,234565,234567,321010,321012,321210,321212,321232,321234,323210,323212,323232,323234,323432,323434,323454,323456,343210,343212,343232,343234,343432,343434,343454,343456,345432,345434,345454,345456,345654,345656,345676,345678,432101,432121,432123,432321,432323,432343,432345,434321,434323,434343,434345,434543,434545,434565,434567,454321,454323,454343,454345,454543,454545,454565,454567,456543,456545,456565,456567,456765,456767,456787,456789,543210,543212,543232,543234,543432,543434,543454,543456,545432,545434,545454,545456,545654,545656,545676,545678,565432,565434,565454,565456,565654,565656,565676,565678,567654,567656,567676,567678,567876,567878,567898,654321,654323,654343,654345,654543,654545,654565,654567,656543,656545,656565,656567,656765,656767,656787,656789,676543,676545,676565,676567,676765,676767,676787,676789,678765,678767,678787,678789,678987,678989,765432,765434,765454,765456,765654,765656,765676,765678,767654,767656,767676,767678,767876,767878,767898,787654,787656,787676,787678,787876,787878,787898,789876,789878,789898,876543,876545,876565,876567,876765,876767,876787,876789,878765,878767,878787,878789,878987,878989,898765,898767,898787,898789,898987,898989,987654,987656,987676,987678,987876,987878,987898,989876,989878,989898,1010101,1010121,1010123,1012101,1012121,1012123,1012321,1012323,1012343,1012345,1210101,1210121,1210123,1212101,1212121,1212123,1212321,1212323,1212343,1212345,1232101,1232121,1232123,1232321,1232323,1232343,1232345,1234321,1234323,1234343,1234345,1234543,1234545,1234565,1234567,2101010,2101012,2101210,2101212,2101232,2101234,2121010,2121012,2121210,2121212,2121232,2121234,2123210,2123212,2123232,2123234,2123432,2123434,2123454,2123456,2321010,2321012,2321210,2321212,2321232,2321234,2323210,2323212,2323232,2323234,2323432,2323434,2323454,2323456,2343210,2343212,2343232,2343234,2343432,2343434,2343454,2343456,2345432,2345434,2345454,2345456,2345654,2345656,2345676,2345678,3210101,3210121,3210123,3212101,3212121,3212123,3212321,3212323,3212343,3212345,3232101,3232121,3232123,3232321,3232323,3232343,3232345,3234321,3234323,3234343,3234345,3234543,3234545,3234565,3234567,3432101,3432121,3432123,3432321,3432323,3432343,3432345,3434321,3434323,3434343,3434345,3434543,3434545,3434565,3434567,3454321,3454323,3454343,3454345,3454543,3454545,3454565,3454567,3456543,3456545,3456565,3456567,3456765,3456767,3456787,3456789,4321010,4321012,4321210,4321212,4321232,4321234,4323210,4323212,4323232,4323234,4323432,4323434,4323454,4323456,4343210,4343212,4343232,4343234,4343432,4343434,4343454,4343456,4345432,4345434,4345454,4345456,4345654,4345656,4345676,4345678,4543210,4543212,4543232,4543234,4543432,4543434,4543454,4543456,4545432,4545434,4545454,4545456,4545654,4545656,4545676,4545678,4565432,4565434,4565454,4565456,4565654,4565656,4565676,4565678,4567654,4567656,4567676,4567678,4567876,4567878,4567898,5432101,5432121,5432123,5432321,5432323,5432343,5432345,5434321,5434323,5434343,5434345,5434543,5434545,5434565,5434567,5454321,5454323,5454343,5454345,5454543,5454545,5454565,5454567,5456543,5456545,5456565,5456567,5456765,5456767,5456787,5456789,5654321,5654323,5654343,5654345,5654543,5654545,5654565,5654567,5656543,5656545,5656565,5656567,5656765,5656767,5656787,5656789,5676543,5676545,5676565,5676567,5676765,5676767,5676787,5676789,5678765,5678767,5678787,5678789,5678987,5678989,6543210,6543212,6543232,6543234,6543432,6543434,6543454,6543456,6545432,6545434,6545454,6545456,6545654,6545656,6545676,6545678,6565432,6565434,6565454,6565456,6565654,6565656,6565676,6565678,6567654,6567656,6567676,6567678,6567876,6567878,6567898,6765432,6765434,6765454,6765456,6765654,6765656,6765676,6765678,6767654,6767656,6767676,6767678,6767876,6767878,6767898,6787654,6787656,6787676,6787678,6787876,6787878,6787898,6789876,6789878,6789898,7654321,7654323,7654343,7654345,7654543,7654545,7654565,7654567,7656543,7656545,7656565,7656567,7656765,7656767,7656787,7656789,7676543,7676545,7676565,7676567,7676765,7676767,7676787,7676789,7678765,7678767,7678787,7678789,7678987,7678989,7876543,7876545,7876565,7876567,7876765,7876767,7876787,7876789,7878765,7878767,7878787,7878789,7878987,7878989,7898765,7898767,7898787,7898789,7898987,7898989,8765432,8765434,8765454,8765456,8765654,8765656,8765676,8765678,8767654,8767656,8767676,8767678,8767876,8767878,8767898,8787654,8787656,8787676,8787678,8787876,8787878,8787898,8789876,8789878,8789898,8987654,8987656,8987676,8987678,8987876,8987878,8987898,8989876,8989878,8989898,9876543,9876545,9876565,9876567,9876765,9876767,9876787,9876789,9878765,9878767,9878787,9878789,9878987,9878989,9898765,9898767,9898787,9898789,9898987,9898989,10101010,10101012,10101210,10101212,10101232,10101234,10121010,10121012,10121210,10121212,10121232,10121234,10123210,10123212,10123232,10123234,10123432,10123434,10123454,10123456,12101010,12101012,12101210,12101212,12101232,12101234,12121010,12121012,12121210,12121212,12121232,12121234,12123210,12123212,12123232,12123234,12123432,12123434,12123454,12123456,12321010,12321012,12321210,12321212,12321232,12321234,12323210,12323212,12323232,12323234,12323432,12323434,12323454,12323456,12343210,12343212,12343232,12343234,12343432,12343434,12343454,12343456,12345432,12345434,12345454,12345456,12345654,12345656,12345676,12345678,21010101,21010121,21010123,21012101,21012121,21012123,21012321,21012323,21012343,21012345,21210101,21210121,21210123,21212101,21212121,21212123,21212321,21212323,21212343,21212345,21232101,21232121,21232123,21232321,21232323,21232343,21232345,21234321,21234323,21234343,21234345,21234543,21234545,21234565,21234567,23210101,23210121,23210123,23212101,23212121,23212123,23212321,23212323,23212343,23212345,23232101,23232121,23232123,23232321,23232323,23232343,23232345,23234321,23234323,23234343,23234345,23234543,23234545,23234565,23234567,23432101,23432121,23432123,23432321,23432323,23432343,23432345,23434321,23434323,23434343,23434345,23434543,23434545,23434565,23434567,23454321,23454323,23454343,23454345,23454543,23454545,23454565,23454567,23456543,23456545,23456565,23456567,23456765,23456767,23456787,23456789,32101010,32101012,32101210,32101212,32101232,32101234,32121010,32121012,32121210,32121212,32121232,32121234,32123210,32123212,32123232,32123234,32123432,32123434,32123454,32123456,32321010,32321012,32321210,32321212,32321232,32321234,32323210,32323212,32323232,32323234,32323432,32323434,32323454,32323456,32343210,32343212,32343232,32343234,32343432,32343434,32343454,32343456,32345432,32345434,32345454,32345456,32345654,32345656,32345676,32345678,34321010,34321012,34321210,34321212,34321232,34321234,34323210,34323212,34323232,34323234,34323432,34323434,34323454,34323456,34343210,34343212,34343232,34343234,34343432,34343434,34343454,34343456,34345432,34345434,34345454,34345456,34345654,34345656,34345676,34345678,34543210,34543212,34543232,34543234,34543432,34543434,34543454,34543456,34545432,34545434,34545454,34545456,34545654,34545656,34545676,34545678,34565432,34565434,34565454,34565456,34565654,34565656,34565676,34565678,34567654,34567656,34567676,34567678,34567876,34567878,34567898,43210101,43210121,43210123,43212101,43212121,43212123,43212321,43212323,43212343,43212345,43232101,43232121,43232123,43232321,43232323,43232343,43232345,43234321,43234323,43234343,43234345,43234543,43234545,43234565,43234567,43432101,43432121,43432123,43432321,43432323,43432343,43432345,43434321,43434323,43434343,43434345,43434543,43434545,43434565,43434567,43454321,43454323,43454343,43454345,43454543,43454545,43454565,43454567,43456543,43456545,43456565,43456567,43456765,43456767,43456787,43456789,45432101,45432121,45432123,45432321,45432323,45432343,45432345,45434321,45434323,45434343,45434345,45434543,45434545,45434565,45434567,45454321,45454323,45454343,45454345,45454543,45454545,45454565,45454567,45456543,45456545,45456565,45456567,45456765,45456767,45456787,45456789,45654321,45654323,45654343,45654345,45654543,45654545,45654565,45654567,45656543,45656545,45656565,45656567,45656765,45656767,45656787,45656789,45676543,45676545,45676565,45676567,45676765,45676767,45676787,45676789,45678765,45678767,45678787,45678789,45678987,45678989,54321010,54321012,54321210,54321212,54321232,54321234,54323210,54323212,54323232,54323234,54323432,54323434,54323454,54323456,54343210,54343212,54343232,54343234,54343432,54343434,54343454,54343456,54345432,54345434,54345454,54345456,54345654,54345656,54345676,54345678,54543210,54543212,54543232,54543234,54543432,54543434,54543454,54543456,54545432,54545434,54545454,54545456,54545654,54545656,54545676,54545678,54565432,54565434,54565454,54565456,54565654,54565656,54565676,54565678,54567654,54567656,54567676,54567678,54567876,54567878,54567898,56543210,56543212,56543232,56543234,56543432,56543434,56543454,56543456,56545432,56545434,56545454,56545456,56545654,56545656,56545676,56545678,56565432,56565434,56565454,56565456,56565654,56565656,56565676,56565678,56567654,56567656,56567676,56567678,56567876,56567878,56567898,56765432,56765434,56765454,56765456,56765654,56765656,56765676,56765678,56767654,56767656,56767676,56767678,56767876,56767878,56767898,56787654,56787656,56787676,56787678,56787876,56787878,56787898,56789876,56789878,56789898,65432101,65432121,65432123,65432321,65432323,65432343,65432345,65434321,65434323,65434343,65434345,65434543,65434545,65434565,65434567,65454321,65454323,65454343,65454345,65454543,65454545,65454565,65454567,65456543,65456545,65456565,65456567,65456765,65456767,65456787,65456789,65654321,65654323,65654343,65654345,65654543,65654545,65654565,65654567,65656543,65656545,65656565,65656567,65656765,65656767,65656787,65656789,65676543,65676545,65676565,65676567,65676765,65676767,65676787,65676789,65678765,65678767,65678787,65678789,65678987,65678989,67654321,67654323,67654343,67654345,67654543,67654545,67654565,67654567,67656543,67656545,67656565,67656567,67656765,67656767,67656787,67656789,67676543,67676545,67676565,67676567,67676765,67676767,67676787,67676789,67678765,67678767,67678787,67678789,67678987,67678989,67876543,67876545,67876565,67876567,67876765,67876767,67876787,67876789,67878765,67878767,67878787,67878789,67878987,67878989,67898765,67898767,67898787,67898789,67898987,67898989,76543210,76543212,76543232,76543234,76543432,76543434,76543454,76543456,76545432,76545434,76545454,76545456,76545654,76545656,76545676,76545678,76565432,76565434,76565454,76565456,76565654,76565656,76565676,76565678,76567654,76567656,76567676,76567678,76567876,76567878,76567898,76765432,76765434,76765454,76765456,76765654,76765656,76765676,76765678,76767654,76767656,76767676,76767678,76767876,76767878,76767898,76787654,76787656,76787676,76787678,76787876,76787878,76787898,76789876,76789878,76789898,78765432,78765434,78765454,78765456,78765654,78765656,78765676,78765678,78767654,78767656,78767676,78767678,78767876,78767878,78767898,78787654,78787656,78787676,78787678,78787876,78787878,78787898,78789876,78789878,78789898,78987654,78987656,78987676,78987678,78987876,78987878,78987898,78989876,78989878,78989898,87654321,87654323,87654343,87654345,87654543,87654545,87654565,87654567,87656543,87656545,87656565,87656567,87656765,87656767,87656787,87656789,87676543,87676545,87676565,87676567,87676765,87676767,87676787,87676789,87678765,87678767,87678787,87678789,87678987,87678989,87876543,87876545,87876565,87876567,87876765,87876767,87876787,87876789,87878765,87878767,87878787,87878789,87878987,87878989,87898765,87898767,87898787,87898789,87898987,87898989,89876543,89876545,89876565,89876567,89876765,89876767,89876787,89876789,89878765,89878767,89878787,89878789,89878987,89878989,89898765,89898767,89898787,89898789,89898987,89898989,98765432,98765434,98765454,98765456,98765654,98765656,98765676,98765678,98767654,98767656,98767676,98767678,98767876,98767878,98767898,98787654,98787656,98787676,98787678,98787876,98787878,98787898,98789876,98789878,98789898,98987654,98987656,98987676,98987678,98987876,98987878,98987898,98989876,98989878,98989898,101010101,101010121,101010123,101012101,101012121,101012123,101012321,101012323,101012343,101012345,101210101,101210121,101210123,101212101,101212121,101212123,101212321,101212323,101212343,101212345,101232101,101232121,101232123,101232321,101232323,101232343,101232345,101234321,101234323,101234343,101234345,101234543,101234545,101234565,101234567,121010101,121010121,121010123,121012101,121012121,121012123,121012321,121012323,121012343,121012345,121210101,121210121,121210123,121212101,121212121,121212123,121212321,121212323,121212343,121212345,121232101,121232121,121232123,121232321,121232323,121232343,121232345,121234321,121234323,121234343,121234345,121234543,121234545,121234565,121234567,123210101,123210121,123210123,123212101,123212121,123212123,123212321,123212323,123212343,123212345,123232101,123232121,123232123,123232321,123232323,123232343,123232345,123234321,123234323,123234343,123234345,123234543,123234545,123234565,123234567,123432101,123432121,123432123,123432321,123432323,123432343,123432345,123434321,123434323,123434343,123434345,123434543,123434545,123434565,123434567,123454321,123454323,123454343,123454345,123454543,123454545,123454565,123454567,123456543,123456545,123456565,123456567,123456765,123456767,123456787,123456789,210101010,210101012,210101210,210101212,210101232,210101234,210121010,210121012,210121210,210121212,210121232,210121234,210123210,210123212,210123232,210123234,210123432,210123434,210123454,210123456,212101010,212101012,212101210,212101212,212101232,212101234,212121010,212121012,212121210,212121212,212121232,212121234,212123210,212123212,212123232,212123234,212123432,212123434,212123454,212123456,212321010,212321012,212321210,212321212,212321232,212321234,212323210,212323212,212323232,212323234,212323432,212323434,212323454,212323456,212343210,212343212,212343232,212343234,212343432,212343434,212343454,212343456,212345432,212345434,212345454,212345456,212345654,212345656,212345676,212345678,232101010,232101012,232101210,232101212,232101232,232101234,232121010,232121012,232121210,232121212,232121232,232121234,232123210,232123212,232123232,232123234,232123432,232123434,232123454,232123456,232321010,232321012,232321210,232321212,232321232,232321234,232323210,232323212,232323232,232323234,232323432,232323434,232323454,232323456,232343210,232343212,232343232,232343234,232343432,232343434,232343454,232343456,232345432,232345434,232345454,232345456,232345654,232345656,232345676,232345678,234321010,234321012,234321210,234321212,234321232,234321234,234323210,234323212,234323232,234323234,234323432,234323434,234323454,234323456,234343210,234343212,234343232,234343234,234343432,234343434,234343454,234343456,234345432,234345434,234345454,234345456,234345654,234345656,234345676,234345678,234543210,234543212,234543232,234543234,234543432,234543434,234543454,234543456,234545432,234545434,234545454,234545456,234545654,234545656,234545676,234545678,234565432,234565434,234565454,234565456,234565654,234565656,234565676,234565678,234567654,234567656,234567676,234567678,234567876,234567878,234567898,321010101,321010121,321010123,321012101,321012121,321012123,321012321,321012323,321012343,321012345,321210101,321210121,321210123,321212101,321212121,321212123,321212321,321212323,321212343,321212345,321232101,321232121,321232123,321232321,321232323,321232343,321232345,321234321,321234323,321234343,321234345,321234543,321234545,321234565,321234567,323210101,323210121,323210123,323212101,323212121,323212123,323212321,323212323,323212343,323212345,323232101,323232121,323232123,323232321,323232323,323232343,323232345,323234321,323234323,323234343,323234345,323234543,323234545,323234565,323234567,323432101,323432121,323432123,323432321,323432323,323432343,323432345,323434321,323434323,323434343,323434345,323434543,323434545,323434565,323434567,323454321,323454323,323454343,323454345,323454543,323454545,323454565,323454567,323456543,323456545,323456565,323456567,323456765,323456767,323456787,323456789,343210101,343210121,343210123,343212101,343212121,343212123,343212321,343212323,343212343,343212345,343232101,343232121,343232123,343232321,343232323,343232343,343232345,343234321,343234323,343234343,343234345,343234543,343234545,343234565,343234567,343432101,343432121,343432123,343432321,343432323,343432343,343432345,343434321,343434323,343434343,343434345,343434543,343434545,343434565,343434567,343454321,343454323,343454343,343454345,343454543,343454545,343454565,343454567,343456543,343456545,343456565,343456567,343456765,343456767,343456787,343456789,345432101,345432121,345432123,345432321,345432323,345432343,345432345,345434321,345434323,345434343,345434345,345434543,345434545,345434565,345434567,345454321,345454323,345454343,345454345,345454543,345454545,345454565,345454567,345456543,345456545,345456565,345456567,345456765,345456767,345456787,345456789,345654321,345654323,345654343,345654345,345654543,345654545,345654565,345654567,345656543,345656545,345656565,345656567,345656765,345656767,345656787,345656789,345676543,345676545,345676565,345676567,345676765,345676767,345676787,345676789,345678765,345678767,345678787,345678789,345678987,345678989,432101010,432101012,432101210,432101212,432101232,432101234,432121010,432121012,432121210,432121212,432121232,432121234,432123210,432123212,432123232,432123234,432123432,432123434,432123454,432123456,432321010,432321012,432321210,432321212,432321232,432321234,432323210,432323212,432323232,432323234,432323432,432323434,432323454,432323456,432343210,432343212,432343232,432343234,432343432,432343434,432343454,432343456,432345432,432345434,432345454,432345456,432345654,432345656,432345676,432345678,434321010,434321012,434321210,434321212,434321232,434321234,434323210,434323212,434323232,434323234,434323432,434323434,434323454,434323456,434343210,434343212,434343232,434343234,434343432,434343434,434343454,434343456,434345432,434345434,434345454,434345456,434345654,434345656,434345676,434345678,434543210,434543212,434543232,434543234,434543432,434543434,434543454,434543456,434545432,434545434,434545454,434545456,434545654,434545656,434545676,434545678,434565432,434565434,434565454,434565456,434565654,434565656,434565676,434565678,434567654,434567656,434567676,434567678,434567876,434567878,434567898,454321010,454321012,454321210,454321212,454321232,454321234,454323210,454323212,454323232,454323234,454323432,454323434,454323454,454323456,454343210,454343212,454343232,454343234,454343432,454343434,454343454,454343456,454345432,454345434,454345454,454345456,454345654,454345656,454345676,454345678,454543210,454543212,454543232,454543234,454543432,454543434,454543454,454543456,454545432,454545434,454545454,454545456,454545654,454545656,454545676,454545678,454565432,454565434,454565454,454565456,454565654,454565656,454565676,454565678,454567654,454567656,454567676,454567678,454567876,454567878,454567898,456543210,456543212,456543232,456543234,456543432,456543434,456543454,456543456,456545432,456545434,456545454,456545456,456545654,456545656,456545676,456545678,456565432,456565434,456565454,456565456,456565654,456565656,456565676,456565678,456567654,456567656,456567676,456567678,456567876,456567878,456567898,456765432,456765434,456765454,456765456,456765654,456765656,456765676,456765678,456767654,456767656,456767676,456767678,456767876,456767878,456767898,456787654,456787656,456787676,456787678,456787876,456787878,456787898,456789876,456789878,456789898,543210101,543210121,543210123,543212101,543212121,543212123,543212321,543212323,543212343,543212345,543232101,543232121,543232123,543232321,543232323,543232343,543232345,543234321,543234323,543234343,543234345,543234543,543234545,543234565,543234567,543432101,543432121,543432123,543432321,543432323,543432343,543432345,543434321,543434323,543434343,543434345,543434543,543434545,543434565,543434567,543454321,543454323,543454343,543454345,543454543,543454545,543454565,543454567,543456543,543456545,543456565,543456567,543456765,543456767,543456787,543456789,545432101,545432121,545432123,545432321,545432323,545432343,545432345,545434321,545434323,545434343,545434345,545434543,545434545,545434565,545434567,545454321,545454323,545454343,545454345,545454543,545454545,545454565,545454567,545456543,545456545,545456565,545456567,545456765,545456767,545456787,545456789,545654321,545654323,545654343,545654345,545654543,545654545,545654565,545654567,545656543,545656545,545656565,545656567,545656765,545656767,545656787,545656789,545676543,545676545,545676565,545676567,545676765,545676767,545676787,545676789,545678765,545678767,545678787,545678789,545678987,545678989,565432101,565432121,565432123,565432321,565432323,565432343,565432345,565434321,565434323,565434343,565434345,565434543,565434545,565434565,565434567,565454321,565454323,565454343,565454345,565454543,565454545,565454565,565454567,565456543,565456545,565456565,565456567,565456765,565456767,565456787,565456789,565654321,565654323,565654343,565654345,565654543,565654545,565654565,565654567,565656543,565656545,565656565,565656567,565656765,565656767,565656787,565656789,565676543,565676545,565676565,565676567,565676765,565676767,565676787,565676789,565678765,565678767,565678787,565678789,565678987,565678989,567654321,567654323,567654343,567654345,567654543,567654545,567654565,567654567,567656543,567656545,567656565,567656567,567656765,567656767,567656787,567656789,567676543,567676545,567676565,567676567,567676765,567676767,567676787,567676789,567678765,567678767,567678787,567678789,567678987,567678989,567876543,567876545,567876565,567876567,567876765,567876767,567876787,567876789,567878765,567878767,567878787,567878789,567878987,567878989,567898765,567898767,567898787,567898789,567898987,567898989,654321010,654321012,654321210,654321212,654321232,654321234,654323210,654323212,654323232,654323234,654323432,654323434,654323454,654323456,654343210,654343212,654343232,654343234,654343432,654343434,654343454,654343456,654345432,654345434,654345454,654345456,654345654,654345656,654345676,654345678,654543210,654543212,654543232,654543234,654543432,654543434,654543454,654543456,654545432,654545434,654545454,654545456,654545654,654545656,654545676,654545678,654565432,654565434,654565454,654565456,654565654,654565656,654565676,654565678,654567654,654567656,654567676,654567678,654567876,654567878,654567898,656543210,656543212,656543232,656543234,656543432,656543434,656543454,656543456,656545432,656545434,656545454,656545456,656545654,656545656,656545676,656545678,656565432,656565434,656565454,656565456,656565654,656565656,656565676,656565678,656567654,656567656,656567676,656567678,656567876,656567878,656567898,656765432,656765434,656765454,656765456,656765654,656765656,656765676,656765678,656767654,656767656,656767676,656767678,656767876,656767878,656767898,656787654,656787656,656787676,656787678,656787876,656787878,656787898,656789876,656789878,656789898,676543210,676543212,676543232,676543234,676543432,676543434,676543454,676543456,676545432,676545434,676545454,676545456,676545654,676545656,676545676,676545678,676565432,676565434,676565454,676565456,676565654,676565656,676565676,676565678,676567654,676567656,676567676,676567678,676567876,676567878,676567898,676765432,676765434,676765454,676765456,676765654,676765656,676765676,676765678,676767654,676767656,676767676,676767678,676767876,676767878,676767898,676787654,676787656,676787676,676787678,676787876,676787878,676787898,676789876,676789878,676789898,678765432,678765434,678765454,678765456,678765654,678765656,678765676,678765678,678767654,678767656,678767676,678767678,678767876,678767878,678767898,678787654,678787656,678787676,678787678,678787876,678787878,678787898,678789876,678789878,678789898,678987654,678987656,678987676,678987678,678987876,678987878,678987898,678989876,678989878,678989898,765432101,765432121,765432123,765432321,765432323,765432343,765432345,765434321,765434323,765434343,765434345,765434543,765434545,765434565,765434567,765454321,765454323,765454343,765454345,765454543,765454545,765454565,765454567,765456543,765456545,765456565,765456567,765456765,765456767,765456787,765456789,765654321,765654323,765654343,765654345,765654543,765654545,765654565,765654567,765656543,765656545,765656565,765656567,765656765,765656767,765656787,765656789,765676543,765676545,765676565,765676567,765676765,765676767,765676787,765676789,765678765,765678767,765678787,765678789,765678987,765678989,767654321,767654323,767654343,767654345,767654543,767654545,767654565,767654567,767656543,767656545,767656565,767656567,767656765,767656767,767656787,767656789,767676543,767676545,767676565,767676567,767676765,767676767,767676787,767676789,767678765,767678767,767678787,767678789,767678987,767678989,767876543,767876545,767876565,767876567,767876765,767876767,767876787,767876789,767878765,767878767,767878787,767878789,767878987,767878989,767898765,767898767,767898787,767898789,767898987,767898989,787654321,787654323,787654343,787654345,787654543,787654545,787654565,787654567,787656543,787656545,787656565,787656567,787656765,787656767,787656787,787656789,787676543,787676545,787676565,787676567,787676765,787676767,787676787,787676789,787678765,787678767,787678787,787678789,787678987,787678989,787876543,787876545,787876565,787876567,787876765,787876767,787876787,787876789,787878765,787878767,787878787,787878789,787878987,787878989,787898765,787898767,787898787,787898789,787898987,787898989,789876543,789876545,789876565,789876567,789876765,789876767,789876787,789876789,789878765,789878767,789878787,789878789,789878987,789878989,789898765,789898767,789898787,789898789,789898987,789898989,876543210,876543212,876543232,876543234,876543432,876543434,876543454,876543456,876545432,876545434,876545454,876545456,876545654,876545656,876545676,876545678,876565432,876565434,876565454,876565456,876565654,876565656,876565676,876565678,876567654,876567656,876567676,876567678,876567876,876567878,876567898,876765432,876765434,876765454,876765456,876765654,876765656,876765676,876765678,876767654,876767656,876767676,876767678,876767876,876767878,876767898,876787654,876787656,876787676,876787678,876787876,876787878,876787898,876789876,876789878,876789898,878765432,878765434,878765454,878765456,878765654,878765656,878765676,878765678,878767654,878767656,878767676,878767678,878767876,878767878,878767898,878787654,878787656,878787676,878787678,878787876,878787878,878787898,878789876,878789878,878789898,878987654,878987656,878987676,878987678,878987876,878987878,878987898,878989876,878989878,878989898,898765432,898765434,898765454,898765456,898765654,898765656,898765676,898765678,898767654,898767656,898767676,898767678,898767876,898767878,898767898,898787654,898787656,898787676,898787678,898787876,898787878,898787898,898789876,898789878,898789898,898987654,898987656,898987676,898987678,898987876,898987878,898987898,898989876,898989878,898989898,987654321,987654323,987654343,987654345,987654543,987654545,987654565,987654567,987656543,987656545,987656565,987656567,987656765,987656767,987656787,987656789,987676543,987676545,987676565,987676567,987676765,987676767,987676787,987676789,987678765,987678767,987678787,987678789,987678987,987678989,987876543,987876545,987876565,987876567,987876765,987876767,987876787,987876789,987878765,987878767,987878787,987878789,987878987,987878989,987898765,987898767,987898787,987898789,987898987,987898989,989876543,989876545,989876565,989876567,989876765,989876767,989876787,989876789,989878765,989878767,989878787,989878789,989878987,989878989,989898765,989898767,989898787,989898789,989898987,989898989,1010101010,1010101012,1010101210,1010101212,1010101232,1010101234,1010121010,1010121012,1010121210,1010121212,1010121232,1010121234,1010123210,1010123212,1010123232,1010123234,1010123432,1010123434,1010123454,1010123456,1012101010,1012101012,1012101210,1012101212,1012101232,1012101234,1012121010,1012121012,1012121210,1012121212,1012121232,1012121234,1012123210,1012123212,1012123232,1012123234,1012123432,1012123434,1012123454,1012123456,1012321010,1012321012,1012321210,1012321212,1012321232,1012321234,1012323210,1012323212,1012323232,1012323234,1012323432,1012323434,1012323454,1012323456,1012343210,1012343212,1012343232,1012343234,1012343432,1012343434,1012343454,1012343456,1012345432,1012345434,1012345454,1012345456,1012345654,1012345656,1012345676,1012345678,1210101010,1210101012,1210101210,1210101212,1210101232,1210101234,1210121010,1210121012,1210121210,1210121212,1210121232,1210121234,1210123210,1210123212,1210123232,1210123234,1210123432,1210123434,1210123454,1210123456,1212101010,1212101012,1212101210,1212101212,1212101232,1212101234,1212121010,1212121012,1212121210,1212121212,1212121232,1212121234,1212123210,1212123212,1212123232,1212123234,1212123432,1212123434,1212123454,1212123456,1212321010,1212321012,1212321210,1212321212,1212321232,1212321234,1212323210,1212323212,1212323232,1212323234,1212323432,1212323434,1212323454,1212323456,1212343210,1212343212,1212343232,1212343234,1212343432,1212343434,1212343454,1212343456,1212345432,1212345434,1212345454,1212345456,1212345654,1212345656,1212345676,1212345678,1232101010,1232101012,1232101210,1232101212,1232101232,1232101234,1232121010,1232121012,1232121210,1232121212,1232121232,1232121234,1232123210,1232123212,1232123232,1232123234,1232123432,1232123434,1232123454,1232123456,1232321010,1232321012,1232321210,1232321212,1232321232,1232321234,1232323210,1232323212,1232323232,1232323234,1232323432,1232323434,1232323454,1232323456,1232343210,1232343212,1232343232,1232343234,1232343432,1232343434,1232343454,1232343456,1232345432,1232345434,1232345454,1232345456,1232345654,1232345656,1232345676,1232345678,1234321010,1234321012,1234321210,1234321212,1234321232,1234321234,1234323210,1234323212,1234323232,1234323234,1234323432,1234323434,1234323454,1234323456,1234343210,1234343212,1234343232,1234343234,1234343432,1234343434,1234343454,1234343456,1234345432,1234345434,1234345454,1234345456,1234345654,1234345656,1234345676,1234345678,1234543210,1234543212,1234543232,1234543234,1234543432,1234543434,1234543454,1234543456,1234545432,1234545434,1234545454,1234545456,1234545654,1234545656,1234545676,1234545678,1234565432,1234565434,1234565454,1234565456,1234565654,1234565656,1234565676,1234565678,1234567654,1234567656,1234567676,1234567678,1234567876,1234567878,1234567898};
-//        System.out.println(ints1.length);
-
-
-
-//            int i = longestValidParentheses(")()()(((((()");
-//            System.out.println(i);
-
-//            int k = search(new int[] {15,16,19,20,25,1,3,4,5,7,10,14}, 25);
-//            System.out.print(k);
-//        String str = "aacdefcaaywwkew";    //aacdefcaaywwkew
-//        String result = longestPalindrome(str);
-//        System.out.println(result);
-
-//        String str = "LEETCODEISHIRING";
-//        String result = convert(str, 4);
-//        System.out.println(result);
-
-//        String s = "-23523";
-//        int i = Integer.valueOf(s);
-//        System.out.println(i);
-
-//        boolean f = isPalindrome(100021);
-//        System.out.println(f);
-//        int i = 3;
-//
-//        String str = "sdfdf";
-//        char s = str.charAt(546);
-
-//        int i = romanToInt("MDLXX");
-//        System.out.println(i);
-
-//        int[] ints = {2, 5, 3, 1, 8, 9, 6, 5};
-//        Arrays.sort(ints);
-//        List<Integer> list = Arrays.stream(ints).boxed().collect(Collectors.toList());
-//        ArrayList<Integer> list1 = new ArrayList<>(list);
-//        System.out.println(list);
-
-//        List<List<Integer>> lists = threeSum(new int[]{-2, 0, 1, 1, 2});
-//        System.out.println(lists);
-//        List<String> stringList = letterCombinations("");
-//        for (String str : stringList)
-//            System.out.println(str);
-
-//        List<List<Integer>> stringList = fourSum(new int[]{1,-2,-5,-4,-3,3,3,5}, -11);
-//        for (List<Integer> integers : stringList)
-//            System.out.println(integers);
-//            ListNode node = new ListNode(1);
-//            node.next = new ListNode(2);
-//            node.next.next = new ListNode(3);
-//            node.next.next.next = new ListNode(4);
-//            node.next.next.next.next = new ListNode(5);
-//            ListNode node1 = removeNthFromEnd(node, 2);
-//
-//            while (node1 != null) {
-//                System.out.print(node.val + " , ");
-//                node = node.next;
-//            }
-//        boolean flag = isValid("{[]}");
-//        System.out.println(flag);
-
-//        String str = "wessdc";
-//        String sbu = str.substring(6, 6);
-//        System.out.println(sbu);
-//        List<String> list = generateParenthesis(4);
-//        for (String str : list)
-//            System.out.println(str);
-//        ListNode node = new ListNode(1);
-//            node.next = new ListNode(2);
-//            node.next.next = new ListNode(3);
-//            node.next.next.next = new ListNode(4);
-//            node.next.next.next.next = new ListNode(5);
-//        node.next.next.next.next.next = new ListNode(6);
-//        node.next.next.next.next.next.next = new ListNode(7);
-//
-//
-//        ListNode res = swapPairs(node);
-//        while (res != null) {
-//            System.out.println(res.val);
-//            res = res.next;
-//        }
-//        int i = removeElement(new int[]{0,1,2,2,3,0,4,2}, 2);
-//        System.out.println(i);
-//        int as = divide(-2147483648, -2147483648);
-//        System.out.println(as);
-
-//        int[] ints = nextPermutation(new int[] {1, 2, 3, 5, 4, 3, 2, 1});
-//        for (int i = 0; i < ints.length; i++)
-//            System.out.print(ints[i] + " , ");
-
-//        int[] ints = new int[]{7,6,5,5,2};
-//        for (int i = 0; i < ints.length / 2; i++) {
-//            int temp = ints[i];
-//            ints[i] = ints[ints.length - 1 - i];
-//            ints[ints.length - 1 - i] = temp;
-//        }
-//        for (int i : ints)
-//            System.out.print(i + " , ");
-//        int[] ints = searchRange(new int[]{}, 0);
-//        System.out.println(ints[0] + " , " + ints[1]);
-//        String str = countAndSay(8);
-//        System.out.println(str);
-//        combinationSum(new int[]{2, 3, 5}, 8);
-//        for (List<Integer> list : listList) {
-//            for (Integer integer : list) {
-//                System.out.print(integer + " , ");
-//            }
-//            System.out.println();
-//        }
-            // 681692778  351251360
-            // 2147483647
-            //System.out.println(Integer.MAX_VALUE);
-
-            //957747794
-            //424238336
-//        int k = findKthNumber(957747794, 424238336);
-//        System.out.println(k);
-//        int[][] items = {{1,91},{1,92},{2,93},{2,97},{1,60},{2,77},{1,65},{1,87},{1,100},{2,100},{2,76}};
-//
-//        int[][] result = highFive(items);
-//
-//        System.out.println(result);
-//        int[] ints = {2, 1, 2, 4, 3};
-//        ArrayList<Integer> list = nextGreaterElement(ints);
-//        Collections.reverse(list);
-//        System.out.println(list);
-//        int[] ints = {1, 4, 3, 6, 8, 22, 13, 17, 16};
-//        int[] ints1 = new int[ints.length * 2];
-//        System.arraycopy(ints, 0, ints1, 0, ints.length);
-//        System.arraycopy(ints, 0, ints1, ints.length, ints.length);
-//        for (int i : ints1)
-//            System.out.print(i + ", ");
-
-//        int[] result = nextGreaterElements(ints);
-//        for (int i : result)
-//            System.out.print(i + ", ");
-//        int i = nextGreaterElement(23792563);
-//        System.out.print(i);
-//        int i = maxProfit(new int[]{4, 5, 2, 4, 3, 3, 1, 2, 5}, 1);
-//        System.out.print(i);
-//        Node node1 = new Node(1, null, null, null);
-//        Node node2 = new Node(2, null, null, null);
-//        Node node3 = new Node(3, null, null, null);
-//        Node node4 = new Node(4, null, null, null);
-//        Node node5 = new Node(5, null, null, null);
-//        Node node6 = new Node(6, null, null, null);
-//        Node node7 = new Node(7, null, null, null);
-//        Node node8 = new Node(8, null, null, null);
-//        Node node9 = new Node(9, null, null, null);
-//        Node node10 = new Node(10, null, null, null);
-//        Node node11 = new Node(11, null, null, null);
-//        Node node12 = new Node(12, null, null, null);
-//        node1.next = node2;
-//        node2.prev = node1;
-//        node2.next = node3;
-//        node3.prev = node2;
-//        node3.next = node4;
-//        node3.child = node7;
-//        node4.prev = node3;
-//        node4.next = node5;
-//        node5.prev = node4;
-//        node5.next = node6;
-//        node6.prev = node5;
-//        node7.prev = node3;
-//        node7.next = node8;
-//        node8.prev = node7;
-//        node8.next = node9;
-//        node8.child = node11;
-//        node11.prev = node8;
-//        node9.prev = node8;
-//        node9.next = node10;
-//        node10.prev = node9;
-//        node11.next = node12;
-//        node12.prev = node11;
-//
-//        getOrder(node1);
-//
-//        System.out.println();
-//        Node result = flatten(node1);
-//        getOrder(result);
-//
-////       ArrayList<Integer> list = test1();
-////       System.out.println(list);
-//        int[] ints = new int[] {1,8,6,2,5,4,8,3,7};   ,879,4234,123,546,33,12,546,78,23,13
-//        int k = maxArea(ints);
-//        System.out.println(k);
-//       long i = 2;
-////            long j = 2;
-////            long k = 3;
-////            long result = ((1 / i)  + j) + k;
-////            System.out.println(result);
-////            System.out.println(Integer.MAX_VALUE);         int[] ints = new int[] {432,123,546,76,12,547,879,4234,123,546,33}; //2783
-//            int k = trap(ints);
-//            System.out.println(k);
-//
-//        boolean  f = robot("URR", new int[][]{{4, 2}}, 3,2);
-//        System.out.println(f);
-
-//            int[][] ints = {{4,2}, {5,1}, {9,0}, {4,3}, {9,3}};
-//            System.out.println(ints.length);
-//            Arrays.sort(ints, new Comparator<int[]>() {
-//                @Override
-//                public int compare(int[] o1, int[] o2) {
-//                    if (o1[0] >= o2[0])
-//                        return 1;
-//                    return -1;
-//                }
-//            });
-//            for (int[] ints1: ints)
-//                System.out.println(ints1[0] + ", " + ints1[1]);
-//
-//            System.out.println(ints[1][1]);
-//            int[] ints = new int[3];
-//            for (int i: ints)
-//                System.out.println(i);
-
-//            int n = 13;
-//            int[][] leadership =  {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
-//                    ,{3,8},{3,9},{8,10},{8,11}};
-//
-//            HashMap<Integer, HashSet<Integer>> leader = new HashMap<>();
-//
-//            for (int i = 1; i <= n; i++)
-//                leader.put(i, new HashSet<>());
-//
-//            for (int i = 0; i < leadership.length; i++) {
-//                HashSet<Integer> list = leader.get(leadership[i][0]);
-//                list.add(leadership[i][1]);
-//            }
-//
-//            for (int i = 1; i <= n; i++) {
-//                if (leader.get(i).size() == 0)
-//                    continue;
-//                leader.get(i).addAll(getSubLeader(leader, leader.get(i)));
-//            }
-
-//            leader.get(1).addAll(getSubLeader(leader, leader.get(1)));
-//
-//            HashSet<Integer> l1 = leader.get(1);
-//            System.out.println("aaa " + l1);
-
-//            HashSet<Integer> set = leader.get(1);
-//            System.out.println(set);
-
-//            for (HashMap.Entry<Integer, HashSet<Integer>> entry: leader.entrySet()) {
-//                System.out.println(entry.getKey());
-//                HashSet<Integer> set = entry.getValue();
-//                System.out.println(set);
-//            }
-//            int n = 13;
-//            int[][] a1 = {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
-//                    ,{3,8},{3,9},{8,10},{8,11}};
-//            int[][] a2 = {{2,2,50},{1,1,111},{1,7,456},{3,5}};
-//            int[] result = bonus(n, a1, a2);
-//            for (int i: result)
-//                System.out.print(i + ", ");
-//            System.out.print((7 / 4) + 1);
-//            int[] answers = new int[] {2,2,2,2};
-//            int count = numRabbits(answers);
-//            System.out.println(count);
-//            HashMap<Integer, Integer> each = new HashMap<>();
-//            for (int i: answers) {
-//                Integer current = each.get(i);
-//                each.put(i, current == null ? 1 : current + 1);
-//            }
-//            for (Map.Entry<Integer, Integer> entry: each.entrySet()) {
-//                System.out.print(entry.getKey() + " : ");
-//                System.out.print(entry.getValue());
-//                System.out.println();
-//            }
-//            int k = totalFruit(new int[] {0,1,2,2});
-//            System.out.println(k);
-//            int k = equalSubstring("szrpjazjjhorzeiduufspm","rgwdrgligareauwihaqroy",55);
-//            System.out.println(k);
-//
-//            int k1 = 'f' - 'b';
-//            System.out.println(k1);
-//            String result = removeDuplicates("yfttttfbbbbnnnnffbgffffgbbbbgssssgthyyyy", 4);
-//            System.out.println(result);
-//            double result = myPow(0, Integer.MIN_VALUE);
-//            System.out.println(result);
-//            char[] chars = {'a', 'b', 'c'};
-//            char[] chars1 = {'c', 'b', 'a'};
-//            Arrays.sort(chars1);
-//            System.out.println(Arrays.equals(chars, chars1));
-//
-//            String str1 = "abc";
-//            String str2 = "abc";
-//            System.out.println(str1.hashCode());
-//            System.out.println(str2.hashCode());
-//
-//            String[] strings = new String[]{"eat","tea","tan","ate","nat","bat"};
-//            groupAnagrams(strings);
-//
-//            HashMap<String, Integer> map = new HashMap<>();
-//            for (String str: strings) {
-//                Integer i = map.get(str);
-//                map.put(str, i == null ? 1 : ++i);
-//            }
-//            System.out.println("----");
-//            for (Map.Entry<String, Integer> entry: map.entrySet())
-//                System.out.println(entry.getKey());
-//            Test test = new Test();
-//            int[] nums = new int[]{1, 2, 3, 4};
-//            List<List<Integer>> permute = test.permute(nums);
-//            for (int i = 0; i < permute.size(); i++) {
-//                System.out.println(permute.get(i));
-//            }
-//            char[][] chars = new char[][] {{'5','3','.','.','7','.','.','.','.'},
-//                    {'6','.','.','1','9','5','.','.','.'},{'.','9','8','.','.','.','.','6','.'},
-//                    {'8','.','.','.','6','.','.','.','3'},{'4','.','.','8','.','3','.','.','1'},
-//                    {'7','.','.','.','2','.','.','.','6'},{'.','6','.','.','.','.','2','8','.'},
-//                    {'.','.','.','4','1','9','.','.','5'},{'.','.','.','.','8','.','.','7','9'}};
-//            System.out.println(isValidSudoku(chars));
-
-//            Test test = new Test();
-//            test.levelOrder(null);
-//            TreeNode n3 = test.getter(3);
-//            TreeNode n1 = test.getter(1);
-//            TreeNode n5 = test.getter(5);
-//            TreeNode n0 = test.getter(0);
-//            TreeNode n2 = test.getter(2);
-//            TreeNode n4 = test.getter(4);
-//            TreeNode n6 = test.getter(6);
-//            TreeNode n7 = test.getter(3);
-//            n3.left = n1;
-//            n3.right = n5;
-//            n1.left = n0;
-//            n1.right = n2;
-//            n5.left = n4;
-//            n5.right = n6;
-//            n2.right = n7;
-//            System.out.println(test.isValidBST(n3));
-//
-//            int[] ints = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-//            int[] candidates = new int[] {10,1,2,7,6,1,5};
-//            List<List<Integer>> listList = test.combinationSum2(candidates, 8);
-//            System.out.println(listList);
-//        System.out.println(test.multiply("765", "4654"));
-//        System.out.println(test.mySqrt(4));
-//        int[] res;
-//        int a = 31;
-//        if (a == 3)
-//            res = new int[10];
-//        else
-//            res = new int[20];
-//        for (int i: res)
-//            System.out.print(i);
-//        int[] res = test.plusOne(new int[] {0});
-//        for (int i: res)
-//            System.out.print(i + " , ");
-//        List<List<Integer>> lists = test.permute1(new int[] {1, 2, 3});
-//        for (List<Integer> list: lists)
-//            System.out.println(list);
-//        System.out.println(test.firstMissingPositive(new int[] {7,8,9,10,13}));
-//        System.out.println(test.getRow(3));
+//        System.out.println(test.longestCommonSubsequence("cdabbqwe", "acde"));
+        long start = System.currentTimeMillis();
+        System.out.println(test.findSubsequences(new int[] {5,5,6}));
+        long end = System.currentTimeMillis();
+        System.out.println(end - start);
+        //,3,-4,4,7,7,-3,-3
+//        int[] res = test.dailyTemperatures(new int[] {89,62,70,58,47,47,46,76,100,70});
+//        for (int r: res)
+//            System.out.print(r + ", ");
+//        System.out.println(test.firstUniqChar("asfjdasfkjdsqwoefwed"));
+////        System.out.println(test.longestConsecutive(new int[] {9,1,4,7,3,-1,0,5,8,-1,6}));
+//////        TreeNode node1 = test.makeTreeNode(5);
+//////        TreeNode node2 = test.makeTreeNode(4);
+//////        TreeNode node3 = test.makeTreeNode(8);
+//////        TreeNode node4 = test.makeTreeNode(11);
+//////        TreeNode node5 = test.makeTreeNode(13);
+//////        TreeNode node6 = test.makeTreeNode(4);
+//////        TreeNode node7 = test.makeTreeNode(7);
+//////        TreeNode node8 = test.makeTreeNode(2);
+//////        TreeNode node9 = test.makeTreeNode(5);
+//////        TreeNode node10 = test.makeTreeNode(1);
+//////        node1.left = node2;
+//////        node1.right = node3;
+//////        node2.left = node4;
+//////        node3.left = node5;
+//////        node3.right = node6;
+//////        node4.left = node7;
+//////        node4.right = node8;
+//////        node6.left = node9;
+//////        node6.right = node10;
+//////        List<List<Integer>> result = test.pathSum(node1, 22);
+//////        for (List<Integer> list: result)
+//////            System.out.println(list);
+//////        test.isPalindrome("A man, a plan, a canal: Panama");
+//////        TreeNode root = test.makeTreeNode(1);
+//////        root.left = test.makeTreeNode(2);
+//////        root.right = test.makeTreeNode(0);
+//////        System.out.println(test.hasPathSum(root, 1));
+//////        System.out.println(test.largestNumber(new int[] {0,0,0,0}));
+//////        System.out.println(test.largestRectangleArea1(new int[] {0,0,0,0,0,0,0,0,2147483647}));
+//////        System.out.println(null == null);   // true
+//////        char a = '4', b = '3';
+//////        System.out.println(a > b);
+////
+//////        System.out.println(test.numDecodings("20"));
+        ListNode l1 = test.makeNode(1);
+        ListNode l2 = test.makeNode(2);
+        ListNode l3 = test.makeNode(3);
+        ListNode l4 = test.makeNode(-3);
+        ListNode l5 = test.makeNode(4);
+        ListNode l6 = test.makeNode(3);
+        ListNode l7 = test.makeNode(7);
+        ListNode l8 = test.makeNode(8);
+//        ListNode l4 = test.makeNode(2);
+//        ListNode l5 = test.makeNode(4);
+        l1.next = l2;
+        l2.next = l3;
+        l3.next = l4;
+        l4.next = l5;
+        //l5.next = l6;
+//        test.removeZeroSumSublists(l1);
+////        l5.next = l6;
+////        l6.next = l7;
+////        l7.next = l8;
+////        int[] ints = test.nextLargerNodes1(l1);
+////        for (int i: ints)
+////            System.out.print(i + ", ");
+////         l3.next = l4;
+////        l4.next = l5;
+////        test.removeElements1(l1, 2);
+////        System.out.println(l1 + " , " + l1.next);
+////        l2.next = l3;
+////        test.reverseList11(l1);
+////        System.out.println(test.jump(new int[] {3,4,2,4,5,4,3,2,4,7,6,4,3,2,4,2}));
+//////        System.out.println(test.dieSimulator(2, new int[] {1, 1, 2, 2, 2, 3}));
+//////        System.out.println(test.balancedStringSplit("RLLLRLLRRR"));
+//////        ListNode l1 = test.makeNode(1);
+//////        ListNode l2 = test.makeNode(1);
+//////        ListNode l3 = test.makeNode(2);
+//////        l1.next = l2;
+//////        l2.next = l3;
+//////        test.deleteDuplicates(l1);
+//////        for (int i = 1; i < 100; i++) {
+//////            double temp = Math.pow(4, i);
+//////            if (temp > Integer.MAX_VALUE) {
+//////                System.out.println(i);
+//////                break;
+//////            }
+//////        }
+//////        test.containsNearbyDuplicate(new int[] {1, 2, 3, 1, 2, 3}, 61);
+//////        ListNode l1 = test.makeNode(1);
+//////        ListNode l2 = test.makeNode(2);
+//////        ListNode l3 = test.makeNode(3);
+//////        l1.next = l2;
+//////        l2.next = l3;
+//////        System.out.println(test.reverseList1(l1));
+//////        int i = -234;
+//////        i = Math.abs(i);
+//////        System.out.println(i);
+//////        StringBuilder sb = new StringBuilder("wefsdf");
+//////        sb.reverse();
+//////        System.out.println(sb);
+//////        System.out.println(test.majorityElement(new int[] {3, 3, 4}));
+////////        ListNode l1 = test.makeNode(4);
+////////        ListNode l2 = test.makeNode(1);
+////////        ListNode l3 = test.makeNode(8);
+////////        ListNode l4 = test.makeNode(4);
+////////        ListNode l5 = test.makeNode(5);
+////////        l1.next = l2;
+////////        l2.next = l3;
+////////        l3.next = l4;
+////////        l4.next = l5;
+////////
+////////        ListNode l21 = test.makeNode(5);
+////////        ListNode l22 = test.makeNode(0);
+////////        ListNode l23 = test.makeNode(1);
+////////        l21.next = l22;
+////////        l22.next = l23;
+////////        l23.next = l3;
+////////
+////////        ListNode res = test.getIntersectionNode(l1, l21);
+////////        System.out.println(res.val);
+//////
+//////
+////////        test.reverseString(new char[]{});
+////////        System.out.println(test.reverseStr("avcdefg", 2));
+////////        System.out.println(test.isMatch("b", "ab*b"));
+////////        List<Integer> list = test.countSteppingNumbers(0, 0);
+////////        for (int i = 0; i < list.size(); i++) {
+////////            System.out.print(list.get(i) + " ");
+////////            if (i % 25 == 0)
+////////                System.out.println();
+////////        }
+////////        System.out.println();
+////////        System.out.println(2 * Math.pow(10, 8));
+////////         System.out.println(Integer.MAX_VALUE);
+//////
+////////            int i = longestValidParentheses(")()()(((((()");
+////////            System.out.println(i);
+//////
+////////            int k = search(new int[] {15,16,19,20,25,1,3,4,5,7,10,14}, 25);
+////////            System.out.print(k);
+////////        String str = "aacdefcaaywwkew";    //aacdefcaaywwkew
+////////        String result = longestPalindrome(str);
+////////        System.out.println(result);
+//////
+////////        String str = "LEETCODEISHIRING";
+////////        String result = convert(str, 4);
+////////        System.out.println(result);
+//////
+////////        String s = "-23523";
+////////        int i = Integer.valueOf(s);
+////////        System.out.println(i);
+//////
+////////        boolean f = isPalindrome(100021);
+////////        System.out.println(f);
+////////        int i = 3;
+////////
+////////        String str = "sdfdf";
+////////        char s = str.charAt(546);
+//////
+////////        int i = romanToInt("MDLXX");
+////////        System.out.println(i);
+//////
+////////        int[] ints = {2, 5, 3, 1, 8, 9, 6, 5};
+////////        Arrays.sort(ints);
+////////        List<Integer> list = Arrays.stream(ints).boxed().collect(Collectors.toList());
+////////        ArrayList<Integer> list1 = new ArrayList<>(list);
+////////        System.out.println(list);
+//////
+////////        List<List<Integer>> lists = threeSum(new int[]{-2, 0, 1, 1, 2});
+////////        System.out.println(lists);
+////////        List<String> stringList = letterCombinations("");
+////////        for (String str : stringList)
+////////            System.out.println(str);
+//////
+////////        List<List<Integer>> stringList = fourSum(new int[]{1,-2,-5,-4,-3,3,3,5}, -11);
+////////        for (List<Integer> integers : stringList)
+////////            System.out.println(integers);
+////////            ListNode node = new ListNode(1);
+////////            node.next = new ListNode(2);
+////////            node.next.next = new ListNode(3);
+////////            node.next.next.next = new ListNode(4);
+////////            node.next.next.next.next = new ListNode(5);
+////////            ListNode node1 = removeNthFromEnd(node, 2);
+////////
+////////            while (node1 != null) {
+////////                System.out.print(node.val + " , ");
+////////                node = node.next;
+////////            }
+////////        boolean flag = isValid("{[]}");
+////////        System.out.println(flag);
+//////
+////////        String str = "wessdc";
+////////        String sbu = str.substring(6, 6);
+////////        System.out.println(sbu);
+////////        List<String> list = generateParenthesis(4);
+////////        for (String str : list)
+////////            System.out.println(str);
+////////        ListNode node = new ListNode(1);
+////////            node.next = new ListNode(2);
+////////            node.next.next = new ListNode(3);
+////////            node.next.next.next = new ListNode(4);
+////////            node.next.next.next.next = new ListNode(5);
+////////        node.next.next.next.next.next = new ListNode(6);
+////////        node.next.next.next.next.next.next = new ListNode(7);
+////////
+////////
+////////        ListNode res = swapPairs(node);
+////////        while (res != null) {
+////////            System.out.println(res.val);
+////////            res = res.next;
+////////        }
+////////        int i = removeElement(new int[]{0,1,2,2,3,0,4,2}, 2);
+////////        System.out.println(i);
+////////        int as = divide(-2147483648, -2147483648);
+////////        System.out.println(as);
+//////
+////////        int[] ints = nextPermutation(new int[] {1, 2, 3, 5, 4, 3, 2, 1});
+////////        for (int i = 0; i < ints.length; i++)
+////////            System.out.print(ints[i] + " , ");
+//////
+////////        int[] ints = new int[]{7,6,5,5,2};
+////////        for (int i = 0; i < ints.length / 2; i++) {
+////////            int temp = ints[i];
+////////            ints[i] = ints[ints.length - 1 - i];
+////////            ints[ints.length - 1 - i] = temp;
+////////        }
+////////        for (int i : ints)
+////////            System.out.print(i + " , ");
+////////        int[] ints = searchRange(new int[]{}, 0);
+////////        System.out.println(ints[0] + " , " + ints[1]);
+////////        String str = countAndSay(8);
+////////        System.out.println(str);
+////////        combinationSum(new int[]{2, 3, 5}, 8);
+////////        for (List<Integer> list : listList) {
+////////            for (Integer integer : list) {
+////////                System.out.print(integer + " , ");
+////////            }
+////////            System.out.println();
+////////        }
+//////            // 681692778  351251360
+//////            // 2147483647
+//////            //System.out.println(Integer.MAX_VALUE);
+//////
+//////            //957747794
+//////            //424238336
+////////        int k = findKthNumber(957747794, 424238336);
+////////        System.out.println(k);
+////////        int[][] items = {{1,91},{1,92},{2,93},{2,97},{1,60},{2,77},{1,65},{1,87},{1,100},{2,100},{2,76}};
+////////
+////////        int[][] result = highFive(items);
+////////
+////////        System.out.println(result);
+////////        int[] ints = {2, 1, 2, 4, 3};
+////////        ArrayList<Integer> list = nextGreaterElement(ints);
+////////        Collections.reverse(list);
+////////        System.out.println(list);
+////////        int[] ints = {1, 4, 3, 6, 8, 22, 13, 17, 16};
+////////        int[] ints1 = new int[ints.length * 2];
+////////        System.arraycopy(ints, 0, ints1, 0, ints.length);
+////////        System.arraycopy(ints, 0, ints1, ints.length, ints.length);
+////////        for (int i : ints1)
+////////            System.out.print(i + ", ");
+//////
+////////        int[] result = nextGreaterElements(ints);
+////////        for (int i : result)
+////////            System.out.print(i + ", ");
+////////        int i = nextGreaterElement(23792563);
+////////        System.out.print(i);
+////////        int i = maxProfit(new int[]{4, 5, 2, 4, 3, 3, 1, 2, 5}, 1);
+////////        System.out.print(i);
+////////        Node node1 = new Node(1, null, null, null);
+////////        Node node2 = new Node(2, null, null, null);
+////////        Node node3 = new Node(3, null, null, null);
+////////        Node node4 = new Node(4, null, null, null);
+////////        Node node5 = new Node(5, null, null, null);
+////////        Node node6 = new Node(6, null, null, null);
+////////        Node node7 = new Node(7, null, null, null);
+////////        Node node8 = new Node(8, null, null, null);
+////////        Node node9 = new Node(9, null, null, null);
+////////        Node node10 = new Node(10, null, null, null);
+////////        Node node11 = new Node(11, null, null, null);
+////////        Node node12 = new Node(12, null, null, null);
+////////        node1.next = node2;
+////////        node2.prev = node1;
+////////        node2.next = node3;
+////////        node3.prev = node2;
+////////        node3.next = node4;
+////////        node3.child = node7;
+////////        node4.prev = node3;
+////////        node4.next = node5;
+////////        node5.prev = node4;
+////////        node5.next = node6;
+////////        node6.prev = node5;
+////////        node7.prev = node3;
+////////        node7.next = node8;
+////////        node8.prev = node7;
+////////        node8.next = node9;
+////////        node8.child = node11;
+////////        node11.prev = node8;
+////////        node9.prev = node8;
+////////        node9.next = node10;
+////////        node10.prev = node9;
+////////        node11.next = node12;
+////////        node12.prev = node11;
+////////
+////////        getOrder(node1);
+////////
+////////        System.out.println();
+////////        Node result = flatten(node1);
+////////        getOrder(result);
+////////
+//////////       ArrayList<Integer> list = test1();
+//////////       System.out.println(list);
+////////        int[] ints = new int[] {1,8,6,2,5,4,8,3,7};   ,879,4234,123,546,33,12,546,78,23,13
+////////        int k = maxArea(ints);
+////////        System.out.println(k);
+////////       long i = 2;
+//////////            long j = 2;
+//////////            long k = 3;
+//////////            long result = ((1 / i)  + j) + k;
+//////////            System.out.println(result);
+//////////            System.out.println(Integer.MAX_VALUE);         int[] ints = new int[] {432,123,546,76,12,547,879,4234,123,546,33}; //2783
+////////            int k = trap(ints);
+////////            System.out.println(k);
+////////
+////////        boolean  f = robot("URR", new int[][]{{4, 2}}, 3,2);
+////////        System.out.println(f);
+//////
+////////            int[][] ints = {{4,2}, {5,1}, {9,0}, {4,3}, {9,3}};
+////////            System.out.println(ints.length);
+////////            Arrays.sort(ints, new Comparator<int[]>() {
+////////                @Override
+////////                public int compare(int[] o1, int[] o2) {
+////////                    if (o1[0] >= o2[0])
+////////                        return 1;
+////////                    return -1;
+////////                }
+////////            });
+////////            for (int[] ints1: ints)
+////////                System.out.println(ints1[0] + ", " + ints1[1]);
+////////
+////////            System.out.println(ints[1][1]);
+////////            int[] ints = new int[3];
+////////            for (int i: ints)
+////////                System.out.println(i);
+//////
+////////            int n = 13;
+////////            int[][] leadership =  {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
+////////                    ,{3,8},{3,9},{8,10},{8,11}};
+////////
+////////            HashMap<Integer, HashSet<Integer>> leader = new HashMap<>();
+////////
+////////            for (int i = 1; i <= n; i++)
+////////                leader.put(i, new HashSet<>());
+////////
+////////            for (int i = 0; i < leadership.length; i++) {
+////////                HashSet<Integer> list = leader.get(leadership[i][0]);
+////////                list.add(leadership[i][1]);
+////////            }
+////////
+////////            for (int i = 1; i <= n; i++) {
+////////                if (leader.get(i).size() == 0)
+////////                    continue;
+////////                leader.get(i).addAll(getSubLeader(leader, leader.get(i)));
+////////            }
+//////
+////////            leader.get(1).addAll(getSubLeader(leader, leader.get(1)));
+////////
+////////            HashSet<Integer> l1 = leader.get(1);
+////////            System.out.println("aaa " + l1);
+//////
+////////            HashSet<Integer> set = leader.get(1);
+////////            System.out.println(set);
+//////
+////////            for (HashMap.Entry<Integer, HashSet<Integer>> entry: leader.entrySet()) {
+////////                System.out.println(entry.getKey());
+////////                HashSet<Integer> set = entry.getValue();
+////////                System.out.println(set);
+////////            }
+////////            int n = 13;
+////////            int[][] a1 = {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
+////////                    ,{3,8},{3,9},{8,10},{8,11}};
+////////            int[][] a2 = {{2,2,50},{1,1,111},{1,7,456},{3,5}};
+////////            int[] result = bonus(n, a1, a2);
+////////            for (int i: result)
+////////                System.out.print(i + ", ");
+////////            System.out.print((7 / 4) + 1);
+////////            int[] answers = new int[] {2,2,2,2};
+////////            int count = numRabbits(answers);
+////////            System.out.println(count);
+////////            HashMap<Integer, Integer> each = new HashMap<>();
+////////            for (int i: answers) {
+////////                Integer current = each.get(i);
+////////                each.put(i, current == null ? 1 : current + 1);
+////////            }
+////////            for (Map.Entry<Integer, Integer> entry: each.entrySet()) {
+////////                System.out.print(entry.getKey() + " : ");
+////////                System.out.print(entry.getValue());
+////////                System.out.println();
+////////            }
+////////            int k = totalFruit(new int[] {0,1,2,2});
+////////            System.out.println(k);
+////////            int k = equalSubstring("szrpjazjjhorzeiduufspm","rgwdrgligareauwihaqroy",55);
+////////            System.out.println(k);
+////////
+////////            int k1 = 'f' - 'b';
+////////            System.out.println(k1);
+////////            String result = removeDuplicates("yfttttfbbbbnnnnffbgffffgbbbbgssssgthyyyy", 4);
+////////            System.out.println(result);
+////////            double result = myPow(0, Integer.MIN_VALUE);
+////////            System.out.println(result);
+////////            char[] chars = {'a', 'b', 'c'};
+////////            char[] chars1 = {'c', 'b', 'a'};
+////////            Arrays.sort(chars1);
+////////            System.out.println(Arrays.equals(chars, chars1));
+////////
+////////            String str1 = "abc";
+////////            String str2 = "abc";
+////////            System.out.println(str1.hashCode());
+////////            System.out.println(str2.hashCode());
+////////
+////////            String[] strings = new String[]{"eat","tea","tan","ate","nat","bat"};
+////////            groupAnagrams(strings);
+////////
+////////            HashMap<String, Integer> map = new HashMap<>();
+////////            for (String str: strings) {
+////////                Integer i = map.get(str);
+////////                map.put(str, i == null ? 1 : ++i);
+////////            }
+////////            System.out.println("----");
+////////            for (Map.Entry<String, Integer> entry: map.entrySet())
+////////                System.out.println(entry.getKey());
+////////            Test test = new Test();
+////////            int[] nums = new int[]{1, 2, 3, 4};
+////////            List<List<Integer>> permute = test.permute(nums);
+////////            for (int i = 0; i < permute.size(); i++) {
+////////                System.out.println(permute.get(i));
+////////            }
+////////            char[][] chars = new char[][] {{'5','3','.','.','7','.','.','.','.'},
+////////                    {'6','.','.','1','9','5','.','.','.'},{'.','9','8','.','.','.','.','6','.'},
+////////                    {'8','.','.','.','6','.','.','.','3'},{'4','.','.','8','.','3','.','.','1'},
+////////                    {'7','.','.','.','2','.','.','.','6'},{'.','6','.','.','.','.','2','8','.'},
+////////                    {'.','.','.','4','1','9','.','.','5'},{'.','.','.','.','8','.','.','7','9'}};
+////////            System.out.println(isValidSudoku(chars));
+//////
+////////            Test test = new Test();
+////////            test.levelOrder(null);
+////////            TreeNode n3 = test.getter(3);
+////////            TreeNode n1 = test.getter(1);
+////////            TreeNode n5 = test.getter(5);
+////////            TreeNode n0 = test.getter(0);
+////////            TreeNode n2 = test.getter(2);
+////////            TreeNode n4 = test.getter(4);
+////////            TreeNode n6 = test.getter(6);
+////////            TreeNode n7 = test.getter(3);
+////////            n3.left = n1;
+////////            n3.right = n5;
+////////            n1.left = n0;
+////////            n1.right = n2;
+////////            n5.left = n4;
+////////            n5.right = n6;
+////////            n2.right = n7;
+////////            System.out.println(test.isValidBST(n3));
+////////
+////////            int[] ints = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+////////            int[] candidates = new int[] {10,1,2,7,6,1,5};
+////////            List<List<Integer>> listList = test.combinationSum2(candidates, 8);
+////////            System.out.println(listList);
+////////        System.out.println(test.multiply("765", "4654"));
+////////        System.out.println(test.mySqrt(4));
+////////        int[] res;
+////////        int a = 31;
+////////        if (a == 3)
+////////            res = new int[10];
+////////        else
+////////            res = new int[20];
+////////        for (int i: res)
+////////            System.out.print(i);
+////////        int[] res = test.plusOne(new int[] {0});
+////////        for (int i: res)
+////////            System.out.print(i + " , ");
+////////        List<List<Integer>> lists = test.permute1(new int[] {1, 2, 3});
+////////        for (List<Integer> list: lists)
+////////            System.out.println(list);
+////////        System.out.println(test.firstMissingPositive(new int[] {7,8,9,10,13}));
+////////        System.out.println(test.getRow(3));
 
     }
 }
