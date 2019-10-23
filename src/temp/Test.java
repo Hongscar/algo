@@ -1,6 +1,7 @@
 package temp;
 
 import com.sun.deploy.util.ArrayUtil;
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import sun.reflect.generics.tree.Tree;
 
 import java.math.BigDecimal;
@@ -3128,16 +3129,6 @@ public class Test {
             btC(low, high, result, f2);
     }
 
-    public int minPathSum(int[][] grid) {
-        int m = grid.length;
-        int n = grid[0].length;
-        int i = 0, j = 0, min = grid[0][0], minI = 0, minJ = 0;
-        while (i <= m && j <= n) {
-
-        }
-        return 1;
-    }
-
     public int minCostToMoveChips(int[] chips) {
         int odd = 0;
         int even = 0;
@@ -5230,13 +5221,860 @@ public class Test {
         }
     }
 
+    // 51
+    public List<List<String>> solveNQueens(int n) {
+        List<List<String>> res = new ArrayList<>();
+        if (n < 0)
+            return res;
+        List<String> current = new ArrayList<>();
+        if (n == 0) {
+            res.add(current);
+            return res;
+        }
+        boolean[][] conflict = new boolean[n][n];
+        solveNQueensHelper(res, current, conflict, 0, n);
+        return res;
+    }
+
+    // 实际上a[i][j], 不需要八个方向都考虑，考虑上面的3个方向即可,因为我们是顺序递归
+    public boolean checkConflict(boolean[][] conflict, int i, int j, int n) {
+        //int[][] increments = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+        int[][] increments1 = {{-1, 0}, {-1, -1}, {-1, 1}};
+        for (int times = 0; times < increments1.length; times++) {
+            int tempI = i, tempJ = j;
+            while (tempI >= 0 && tempI < n && tempJ >= 0 && tempJ < n) {
+                if (conflict[tempI][tempJ])
+                    return false;
+                tempI += increments1[times][0];
+                tempJ += increments1[times][1];
+            }
+        }
+        return true;
+    }
+
+    public void solveNQueensHelper(List<List<String>> result, List<String> current, boolean[][] conflict,
+                                   int row, int n) {
+        if (row == n) {
+            result.add(new ArrayList<>(current));
+            return;
+        }
+        String row1 = "";
+        for (int i = 0; i < n; i++) {
+            if (checkConflict(conflict, row, i, n)) {
+                conflict[row][i] = true;
+                row1 += "Q";
+                while (row1.length() < n)
+                    row1 += ".";
+                current.add(row1);
+                solveNQueensHelper(result, current, conflict, row + 1, n);
+                current.remove(current.size() - 1);
+                conflict[row][i] = false;
+                if (row1.length() != 1)                 // 这个只是针对n == 1的情况,也可以另外特殊处理n == 1,没区别
+                    row1 = row1.split("Q")[0];
+                row1 += ".";
+            }
+            else if (i == n - 1) {
+                return;     // 返回上一层
+            }
+            else
+                row1 += ".";
+        }
+    }
+
+    // 64   classic DP
+    public int minPathSum(int[][] grid) {
+        if (grid == null)
+            return 0;
+        int m = grid.length;
+        if (m == 0)
+            return 0;
+        int n = grid[0].length;
+        if (n == 0)
+            return 0;
+        int[][] dp = new int[m][n];
+        dp[m - 1][n - 1] = grid[m - 1][n - 1];
+        for (int x = m - 2; x >= 0; x--)
+            dp[x][n - 1] = dp[x + 1][n - 1] + grid[x][n - 1];
+        for (int y = n - 2; y >= 0; y--)
+            dp[m - 1][y] = dp[m - 1][y + 1] + grid[m - 1][y];
+        for (int x = m - 2; x >= 0; x--)
+            for (int y = n - 2; y >= 0; y--)
+                dp[x][y] = Math.min(dp[x + 1][y], dp[x][y + 1]) + grid[x][y];
+        return dp[0][0];
+    }
+
+    // 71
+    public String simplifyPath(String path) {
+
+        LinkedList<Character> stack = new LinkedList<>();
+        int length = path.length();
+        for (int i = 0; i < length; i++) {
+            char str = path.charAt(i);
+            if (stack.isEmpty())
+                stack.addLast(str);
+            else if (stack.getLast() == '/' && str == '/')      // 去掉重复的'/'
+                continue;
+            else if (stack.getLast() == '/' && str == '.') {
+                if (i == length - 1 || path.charAt(i + 1) != '.')  // 去掉 /.
+                    if (i == length - 1 || path.charAt(i + 1) == '/')      //   /./才正确
+                        stack.removeLast();
+                    else {
+                        stack.addLast(str);
+                        continue;
+                    }
+                else if (i < length - 2 && path.charAt(i + 1) == '.' && path.charAt(i + 2) == '.')  // 多于两个.的情况
+                    stack.addLast(str);
+                else if (i != length - 1 && path.charAt(i + 1) == '.') {
+                    if (i < length - 2 && path.charAt(i + 2) != '/') {   // 并不是/../的情况,而是/..abc/的情况
+                        stack.addLast(str);
+                        continue;
+                    }
+                    stack.removeLast();         // 先去掉一个/
+                    while (!stack.isEmpty() && stack.getLast() != '/')      // isEmpty防止开头就是/..的情况
+                        stack.removeLast();     // 去掉路径名
+                    if (!stack.isEmpty())
+                    stack.removeLast();         // 去掉再上一个的/,即到达了上一层路径
+                    i++;        // 直接跳过下一个 '.'
+                }
+            }
+            else
+                stack.addLast(str);     // 路径的length不是1的情况,比如 /abc/defgh
+        }
+        if (stack.size() == 0)      // 不仅仅是path.length()为0的情况,比如还有/.. , /a/..等等的情况
+            return "/";
+        if (stack.size() != 1 && stack.getLast() == '/')
+            stack.removeLast();
+        StringBuilder sb = new StringBuilder();
+        while (!stack.isEmpty())
+            sb.append(stack.removeFirst());
+        return sb.toString();
+    }
+
+    // 71 参考Python的一个写法     好像并不成功,下次再研究
+    public String simplifyPath1(String path) {
+        LinkedList<String> stack = new LinkedList<>();
+        for (String str: path.split("/")) {
+            if (str != "" || str != "." || str != "..")
+                stack.addLast(str);
+            else if (!stack.isEmpty() && str == "..")
+                stack.removeLast();
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("/");
+        while (!stack.isEmpty()) {
+            sb.append(stack.removeLast());
+            sb.append("/");
+        }
+        while (sb.length() != 1 && sb.charAt(sb.length() - 1) == '/')  // 去掉最后的'/'
+            sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+
+    public int missingNumber(int[] arr) {
+        int first = arr[0], second = arr[1], third = arr[2];
+        int diff1 = Math.abs(second - first);
+        int diff2 = Math.abs(third - second);
+        if (diff1 > diff2)
+            return (first + second) / 2;
+        else if (diff1 < diff2)
+            return (second + third) / 2;
+        int diff = second - first;
+        for (int i = 3; i < arr.length; i++)
+            if (arr[i] - arr[i - 1] != diff)
+                return (arr[i] + arr[i - 1]) / 2;
+        return arr[0];
+    }
+
+    public double probabilityOfHeads(double[] prob, int target) {
+        BigDecimal result = new BigDecimal(Double.toString(prob[0]));
+        for (int i = 1; i < prob.length; i++)
+            result = result.multiply(new BigDecimal(Double.toString(prob[i])));
+        return result.doubleValue();
+    }
+
+    public boolean checkStraightLine(int[][] coordinates) {
+        int x1 = coordinates[0][0], y1 = coordinates[0][1], x2 = coordinates[1][0], y2 = coordinates[1][1];
+        int k = 0, b = 0;
+        if (x1 == x2) {
+            for (int i = 2; i < coordinates.length; i++)
+                if (coordinates[i][0] != x1)
+                    return false;
+            return true;
+        }
+        else {
+            k = (y2 - y1) / (x2 - x1);
+            b = y2 - k * x2;
+        }
+        for (int i = 2; i < coordinates.length; i++)
+            if (coordinates[i][1] != k * coordinates[i][0] + b)
+                return false;
+        return true;
+    }
+
+    public List<String> removeSubfolders(String[] folder) {
+        HashSet<String> set = new HashSet<>();
+        for (String str: folder) {
+            if (str.equals("/"))
+                continue;
+            String[] paths = str.split("\\/");
+            String temp = "";
+            for (int i = 0; i < paths.length; i++) {
+                temp += "/" + paths[i];
+            }
+        }
+        return null;
+    }
+
+    public int balancedString(String s) {
+//        int res = 0;
+//        int eachLength = s.length() / 4;
+//        HashMap<Character, Integer> map = new HashMap<>();
+//        for (char c: s.toCharArray()) {
+//            Integer i = map.get(c);
+//            map.put(c, i == null ? 1 : i + 1);
+//        }
+//        for (Map.Entry<Character, Integer> entry: map.entrySet()) {
+//            int length = entry.getValue();
+//            res += length > eachLength ? (length - eachLength) : 0;
+//        }
+//        return res;
+        int length = s.length();
+        int res = 0;
+        for (int i = 0; i * 4 < length; i++) {
+            if (s.charAt(i * 4) != s.charAt(i * 4 + 1) && s.charAt(i * 4 + 1) != s.charAt(i * 4 + 2) &&
+                    s.charAt(i * 4 + 2) != s.charAt(i * 4 + 3))
+                res = res > 1 ? res : 1;
+            else if (s.charAt(i * 4) == s.charAt(i * 4 + 1) && s.charAt(i * 4 + 1) == s.charAt(i * 4 + 2) &&
+                    s.charAt(i * 4 + 2) == s.charAt(i * 4 + 3))
+                res = 1;
+        }
+        return res;
+    }
+
+    // 788  每位都在[2,5,6,9,0,1,8]中,且至少有一位在[2,5,6,9]中  但显然,这样慢慢replace会很慢
+    public int rotatedDigits(int N) {
+        int res = 0;
+        for (int i = 2; i <= N; i++) {
+            String s = String.valueOf(i);
+            s = s.replaceAll("[018]", "");
+            if (!"".equals(s)) {
+                s = s.replaceAll("[2569]", "");
+                if ("".equals(s))
+                    res++;
+            }
+        }
+        return res;
+    }
+
+    // 788  同样的逻辑,速度比上面快了几十倍,所以并不是代码越简单越好的。
+    public int rotatedDigits1(int N) {
+        int res = 0;
+        int temp, digit = 0;
+        boolean flag, flag1;        // flag for whether one digit is [2,5,6,9]
+        for (int i = 2; i <= N; i++) {
+            flag = false;
+            flag1 = true;
+            temp = i;
+            while (temp != 0) {
+                digit = temp % 10;     // the digit to check
+                temp /= 10;
+                if (digit == 2 || digit == 5 || digit == 6 || digit == 9)
+                    flag = true;
+                else if (digit == 3 || digit == 4 || digit == 7) {
+                    flag1 = false;
+                    break;
+                }
+            }
+            if (flag && flag1)
+                res++;
+        }
+        return res;
+    }
+
+    // 728
+    public List<Integer> selfDividingNumbers(int left, int right) {
+        List<Integer> res = new ArrayList<>();
+        boolean flag;
+        for (int i = left; i <= right; i++) {
+            flag = true;
+            String string = String.valueOf(i);
+            char[] chars = string.toCharArray();
+            for (char c: chars) {
+                String s = String.valueOf(c);
+                int i1 = Integer.valueOf(s);
+                if (i1 == 0 || i % i1 != 0) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag)
+                res.add(i);
+        }
+        return res;
+    }
+
+    // 1185
+    public String dayOfTheWeek(int day, int month, int year) {
+        int daySumBeforeThisYear = 0;
+        String[] result = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        for (int i = 1971; i < year; i++)
+            if (ifLeapYear(i))
+                daySumBeforeThisYear += 366;
+            else
+                daySumBeforeThisYear += 365;
+        int thisYearFirstDay = (daySumBeforeThisYear % 7 + 5) % 7;
+        int thisYearDay = 0;
+        for (int i = 1; i < month; i++)
+            if (i == 1 || i == 3 || i == 5 || i == 7 || i == 8 || i == 10)
+                thisYearDay += 31;
+            else if (i == 4 || i == 6 || i == 9 || i == 11)
+                thisYearDay += 30;
+            else if (i == 2)
+                if (ifLeapYear(year))
+                    thisYearDay += 29;
+                else
+                    thisYearDay += 28;
+        thisYearDay += day;
+        thisYearDay--;      // 减去第一天
+        int res = (thisYearDay % 7 + thisYearFirstDay) % 7;
+        return result[res];
+    }
+
+    public boolean ifLeapYear(int year) {
+        if (year % 100 != 0 && year % 4 == 0)
+            return true;
+        else if (year % 100 == 0 && year % 400 == 0)
+            return true;
+        return false;
+    }
+
+    // 1128     用bitmap更快
+    public int numEquivDominoPairs(int[][] dominoes) {
+        HashMap<String, Integer> map = new HashMap<>();
+        String str;
+        for (int i = 0; i < dominoes.length; i++) {
+            int first = dominoes[i][0], second = dominoes[i][1];
+            if (first < second)
+                str = dominoes[i][0] + "" + dominoes[i][1];
+            else
+                str = dominoes[i][1] + "" + dominoes[i][0];
+            Integer integer = map.get(str);
+            map.put(str, integer == null ? 1 : integer + 1);
+        }
+        int res = 0;
+        for (Map.Entry<String, Integer> entry: map.entrySet())
+            res += entry.getValue() * (entry.getValue() - 1) / 2;
+        return res;
+    }
+
+    // 1128 bitmap
+    public int numEquivDominoPairs1(int[][] dominoes) {
+        int[][] map = new int[10][10];
+        for (int i = 0; i < dominoes.length; i++) {
+            int first = dominoes[i][0], second = dominoes[i][1];
+            if (first < second)
+                map[first][second]++;
+            else
+                map[second][first]++;
+        }
+        int res = 0;
+        for (int i = 0; i < 10; i++)
+            for (int j = 0; j < 10; j++)
+                res += map[i][j] * (map[i][j] - 1) / 2;
+        return res;
+    }
+
+    // 621      getMax,每次都要重新排序,可以预见的效率奇低,但确实能完成任务,而且并不是套公式直接get答案
+    // 改用优先队列应该会快很多. TODO
+    public int leastInterval(char[] tasks, int n) {
+        HashMap<Character, Integer> waiting = new HashMap<>();
+        HashMap<Character, Integer> map = new HashMap<>();
+        for (char task: tasks) {
+            Integer integer = map.get(task);
+            map.put(task, integer == null ? 1 : integer + 1);
+            waiting.put(task, 0);
+        }
+        int time = 0;
+        while (map.size() != 0) {
+            getMax(map, waiting, n);
+            time ++;
+        }
+        return time;
+    }
+
+    public void getMax(HashMap<Character, Integer> map, HashMap<Character, Integer> waiting, int n) {
+        List<Map.Entry<Character, Integer>> list = new ArrayList<>(map.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<Character, Integer>>() {
+            @Override
+            public int compare(Map.Entry<Character, Integer> o1, Map.Entry<Character, Integer> o2) {
+                return o1.getValue().compareTo(o2.getValue());
+            }
+        });
+        char doTask = 'a';
+        boolean canDo = false;
+        for (int i = list.size() - 1; i >= 0; i--) {
+            Map.Entry<Character, Integer> entry = list.get(i);
+            doTask = entry.getKey();
+            if (waiting.get(doTask) > 0)
+                continue;
+            else {
+                canDo = true;
+                int count = entry.getValue();
+                if (count == 1)
+                    map.remove(doTask);
+                else
+                    map.put(doTask, entry.getValue() - 1);
+                break;
+            }
+        }
+        for (Map.Entry<Character, Integer> entry: waiting.entrySet())
+            if (entry.getValue() != 0)
+                entry.setValue(entry.getValue() - 1);
+        if (canDo)
+            waiting.put(doTask, n);
+    }
+
+    // 560  暴力法应该把前面的sum记录下来(空间换时间),确保每一次加法都只需要使用一次
+    // sum(i, j)  (i ~ j - 1的和)  ==  sum(0, j) - sum(0, i)
+    public int subarraySum(int[] nums, int k) {
+        int res = 0, sum;
+        int length = nums.length;
+        int[] prevSum = new int[length + 1];
+        for (int i = 1; i <= nums.length; i++)
+            prevSum[i] = prevSum[i - 1] + nums[i - 1];
+
+        for (int i = 1; i <= nums.length; i++) {
+            for (int j = i; j <= nums.length; j++) {
+                if (i != j)
+                    sum = prevSum[j] - prevSum[i];
+                else
+                    sum = prevSum[i];
+                if (sum == k)
+                    res++;
+            }
+        }
+        return res;
+    }
+
+    // 不用数组,直接用HashMap存
+    public int subarraySum1(int[] nums, int k) {
+        /**
+         扫描一遍数组, 使用map记录出现同样的和的次数, 对每个i计算累计和sum并判断map内是否有sum-k
+         **/
+        Map<Integer, Integer> map = new HashMap<>(nums.length * 2);     // 省去扩容的消耗
+        map.put(0, 1);          // 空数组可以表示sum为0的情况
+        int sum = 0, ret = 0;
+
+        for(int i = 0; i < nums.length; ++i) {
+            sum += nums[i];
+            if(map.containsKey(sum - k))
+                ret += map.get(sum - k);
+            map.put(sum, map.getOrDefault(sum, 0) + 1);
+        }
+
+        return ret;
+    }
+
+    // 130  用DFS,先对边界的'O'进行DFS,使得与其连通的'O'更改为'-'.
+    // 接着再遍历,没有连通的'O'直接替换成'X',而连通的'O',已经更改为'-',改回'O'
+    //      也可以用并查集 disjointSet
+    public void solve(char[][] board) {
+        int row = board.length;
+        if (row == 0)
+            return;
+        int column = board[0].length;
+        for (int i = 0; i < row; i++)
+            for (int j = 0; j < column; j++)
+                if (i == 0 || j == 0 || i == row - 1 || j == column - 1)
+                    dfs(board, i, j, row, column);      // 对边界的'O'进行DFS
+        for (int i = 0; i < row; i++)
+            for (int j = 0; j < column; j++)
+                if (board[i][j] == 'O')
+                    board[i][j] = 'X';
+                else if (board[i][j] == '-')
+                    board[i][j] = 'O';
+    }
+
+    public void dfs(char[][] board, int i, int j, int row, int column) {
+        if (i < 0 || j < 0 || i >= row || j >= column || board[i][j] != 'O')
+            return;
+        board[i][j] = '-';
+        dfs(board, i - 1, j, row, column);
+        dfs(board, i + 1, j, row, column);
+        dfs(board, i, j - 1, row, column);
+        dfs(board, i, j + 1, row, column);
+        return;
+    }
+
+    // 200
+    public int numIslands(char[][] grid) {
+        int row = grid.length;
+        if (row == 0)
+            return 0;
+        int column = grid[0].length;
+        int res = 0;
+        for (int i = 0; i < row; i++)
+            for (int j = 0; j < column; j++)
+                if (grid[i][j] == '1') {
+                    res++;
+                    dfs(grid, i, j, row, column);
+                }
+        return res;
+    }
+
+    // 695
+    public int maxAreaOfIsland(int[][] grid) {
+        int row = grid.length;
+        if (row == 0)
+            return 0;
+        int column = grid[0].length;
+        int current = 0;
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < row; i++)
+            for (int j = 0; j < column; j++)
+                if (grid[i][j] == 1)
+                    dfs(grid, i, j, row, column, current++, list);
+        int res = 0;
+        for (int area: list)
+            res = res > area ? res : area;
+        return res;
+    }
+
+    public void dfs(int[][] grid, int i, int j, int row, int column, int current, List<Integer> list) {
+        if (i < 0 || j < 0 || i >= row || j >= column || grid[i][j] != 1)
+            return;
+        grid[i][j] = 0;
+        if (current == list.size())
+            list.add(1);
+        else {
+            int prev = list.remove(list.size() - 1);
+            list.add(prev + 1);
+        }
+        dfs(grid, i - 1, j, row, column, current, list);
+        dfs(grid, i + 1, j, row, column, current, list);
+        dfs(grid, i, j - 1, row, column, current, list);
+        dfs(grid, i, j + 1, row, column, current, list);
+    }
+
+    // 152  DP
+    public int maxProduct(int[] nums) {
+        int max = Integer.MIN_VALUE, imax = 1, imin = 1;
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] < 0) {      // 记录最小,最大. 当下一个值为负数,会导致最大的变成最小,最小变成最大.
+                int temp = imax;
+                imax = imin;
+                imin = temp;
+            }
+            imax = Math.max(nums[i], imax * nums[i]);
+            imin = Math.min(nums[i], imin * nums[i]);
+            max = Math.max(max, imax);
+        }
+        return max;
+    }
+
+    // 198  DP
+    public int rob(int[] nums) {
+        int[] dp = new int[nums.length + 1];
+        for (int i = 1; i <= nums.length; i++)
+            if (i == 1)
+                dp[i] = nums[i - 1];
+            else if (i == 2)
+                dp[i] = Math.max(nums[0], nums[1]);
+            else
+                dp[i] = Math.max(dp[i - 2] + nums[i - 1], dp[i - 1]);
+        return dp[nums.length];
+    }
+
+    // 213  问题退化成1~ n-1, 2~n 的最大值
+    public int rob1(int[] nums) {
+        if (nums.length == 0)
+            return 0;
+        if (nums.length == 1)       // 1也是特殊情况了,否则还得在helper方法里对i == 1进行特殊判定,更麻烦
+            return nums[0];
+        return Math.max(rob(nums, 1, nums.length - 1, true), rob(nums, 2, nums.length, false));
+    }
+
+    public int rob(int[] nums, int begin, int end, boolean isFirst) {
+        int[] dp = new int[end + 1];
+        for (int i = begin; i <= end; i++)
+            if (i == 1)
+                dp[i] = nums[i - 1];
+            else if (i == 2)
+                if (isFirst)
+                    dp[i] = Math.max(nums[0], nums[1]); // 如果从1开始,并非一定要从Nums[1]开始,nums[2]也不会违反规则
+                else
+                    dp[i] = nums[1];    // 如果是从2开始,那么dp[2]只能是nums[1]
+            else
+                dp[i] = Math.max(dp[i - 2] + nums[i - 1], dp[i - 1]);
+        return dp[end];
+    }
+
+    // 221  暴力法
+    public int maximalSquare(char[][] matrix) {
+        int m = matrix.length;
+        if (m == 0)
+            return 0;
+        int n = matrix[0].length;
+        int current = 0;
+        boolean flag;
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < n; j++) {
+                if (matrix[i][j] == '1') {
+                    while (i + current < m && j + current < n) {
+                        flag = true;
+                        for (int tempI = i; tempI <= i + current && tempI < m; tempI++)
+                            for (int tempJ = j; tempJ <= j + current && tempJ < n; tempJ++)
+                                if (matrix[tempI][tempJ] == '0') {
+                                    flag = false;
+                                    break;
+                                }
+                        if (flag)
+                            current++;
+                        else
+                            break;
+                    }
+                }
+            }
+        return current * current;
+    }
+
+    // 221  DP: dp[i][j] = 1 + min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1])
+    public int maximalSquare1(char[][] matrix) {
+        int m = matrix.length;
+        if (m == 0)
+            return 0;
+        int n = matrix[0].length;
+        int[][] dp = new int[m + 1][n + 1];
+        int max = 0;
+        for (int i = 1; i <= m; i++)
+            for (int j = 1; j <= n; j++)
+                if (matrix[i - 1][j - 1] == '1') {
+                    dp[i][j] = 1 + Math.min(dp[i - 1][j - 1], Math.min(dp[i - 1][j], dp[i][j - 1]));
+                    max = Math.max(max, dp[i][j]);
+                }
+        return max * max;
+    }
+
+    // 226
+    public TreeNode invertTree(TreeNode root) {
+        if (root == null || root.right == null && root.left == null)
+            return root;
+        TreeNode left = root.left;
+        root.left = invertTree(root.right);
+        root.right = invertTree(left);
+        return root;
+    }
+
+    // 283 普通做法,比较慢
+    public void moveZeroes(int[] nums) {
+        int length = nums.length;
+        int count = 0;
+        for (int i = length - 1; i >= 0; i--) {
+            if (nums[i] != 0)
+                continue;
+            for (int j = i; j < length - count - 1; j++)
+                nums[j] = nums[j + 1];
+            nums[length - count++ - 1] = 0;
+        }
+    }
+
+    // 283  双指针,先移动非0到前面,然后在最后补0即可！
+    public void moveZeroes1(int[] nums) {
+        int length = nums.length;
+        int j = 0;
+        for (int i = 0; i < length; i++)
+            if (nums[i] != 0)
+                nums[j++] = nums[i];        // 把非0的数放到前j位
+        while (j < length)
+            nums[j++] = 0;                  // 全部非0已经放置到前j位,在最后补0即可
+    }
+
+    // 300  n ^ 2   奇怪的要求
+    public int lengthOfLIS(int[] nums) {
+        if (nums.length == 0)
+            return 0;
+        int res = 1;
+        for (int i = 0; i < nums.length - res; i++) {
+            int temp = 1;
+            int current = nums[i], prev = nums[i];
+            for (int j = i + 1; j < nums.length; j++)
+                if (nums[j] > current) {
+                    temp++;
+                    prev = current;
+                    current = nums[j];
+                }
+                else if (nums[j] > prev)
+                    current = nums[j];          // 寻找最佳的下一个上升点
+
+            res = res > temp ? res : temp;
+        }
+        return res;
+    }
+
+    // 300  DP方程:  dp[i] = Math.max(dp[j] + 1, dp[i])   where j < i 且 nums[j] < nums[i] (其实就是往后去查找结果!
+    public int lengthOfLIS1(int[] nums) {
+        int length = nums.length;
+        if (length < 2)
+            return length;
+        int[] dp = new int[length];
+        Arrays.fill(dp, 1);         // 自己一定是一个子序列
+        for (int i = 1; i < length; i++)
+            for (int j = 0; j < i; j++)
+                if (nums[j] < nums[i])
+                    dp[i] = Math.max(dp[j] + 1, dp[i]);
+        int res = dp[0];
+        for (int d: dp)
+            res = Math.max(res, d);
+        return res;
+    }
+
+    // 287  使用了n空间
+    public int findDuplicate(int[] nums) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for (int num: nums)
+            map.put(num, map.getOrDefault(num, 0) + 1);
+        for (Map.Entry<Integer, Integer> entry: map.entrySet())
+            if (entry.getValue() > 1)
+                return entry.getKey();
+        return -1;
+
+        // 也可以直接sort,但这样又少满足了一个条件,题目要求数组不可变
+//        Arrays.sort(nums);
+//        for (int i = 0; i < nums.length - 1; i++)
+//            if (nums[i] == nums[i + 1])
+//                return nums[i];
+//        return -1;
+    }
+
+    // 494      这个其实就是暴力, dont cheat yourself.
+    public int findTargetSumWays(int[] nums, int S) {
+        int length = nums.length;
+        ArrayList<Integer> list = new ArrayList<>();
+        list.add(0);
+        for (int i = 0; i < nums.length; i++)
+            list = findTargetSumWaysHelper(list, i, nums);
+        int res = 0;
+        for (int integer: list)
+            if (integer == S)
+                res++;
+        return res;
+    }
+
+    public ArrayList<Integer> findTargetSumWaysHelper(ArrayList<Integer> list, int index, int[] nums) {
+        ArrayList<Integer> temp = new ArrayList<>();
+        for (int i: list) {
+            temp.add(i + nums[index]);
+            temp.add(i - nums[index]);
+        }
+        return temp;
+    }
+
+    // 461
+    public int hammingDistance(int x, int y) {
+        int res = x ^ y;
+        String str = Integer.toBinaryString(res);
+        int r = 0;
+        for (char c: str.toCharArray())
+            if (c == '1')
+                r++;
+        return r;
+    }
+
+    // 617
+    public TreeNode mergeTrees(TreeNode t1, TreeNode t2) {
+        if (t1 == null && t2 == null)
+            return null;
+        int val;
+        TreeNode left1 = null, left2 = null, right1 = null, right2 = null;
+        if (t1 == null) {
+            val = t2.val;
+            left2 = t2.left;
+            right2 = t2.right;
+        }
+        else if (t2 == null) {
+            val = t1.val;
+            left1 = t1.left;
+            right1 = t1.right;
+        }
+        else {
+            val = t1.val + t2.val;
+            left1 = t1.left;
+            right1 = t1.right;
+            left2 = t2.left;
+            right2 = t2.right;
+        }
+        TreeNode root = new TreeNode(val);
+        root.left = mergeTrees(left1, left2);
+        root.right = mergeTrees(right1, right2);
+        return root;
+    }
+
+    // 416      TODO    背包问题
+    public boolean canPartition(int[] nums) {
+        Arrays.sort(nums);
+        int length = nums.length;
+        int sum = 0;
+        for (int num: nums)
+            sum += num;
+        int[] prevSum = new int[length];
+        prevSum[0] = nums[0];
+        for (int i = 1; i < length; i++)
+            prevSum[i] = prevSum[i - 1] + nums[i];
+        int[][] dp = new int[length][length];
+        int current;
+        for (int i = 0; i < length; i++)
+            for (int j = i; j < length; j++) {
+                if (i == j)
+                    current = prevSum[i];
+                else
+                    current = prevSum[j] - prevSum[i];
+                if (current * 2 == sum)
+                    return true;
+            }
+        return false;
+    }
+
+    // 581          n ^ 2
+    public int findUnsortedSubarray(int[] nums) {
+        int len = nums.length;
+        int left = len, right = 0;
+        for (int i = 0; i < len - 1; i++)
+            for (int j = i + 1; j < len; j++)
+                if (nums[j] < nums[i]) {
+                    right = Math.max(right, j);
+                    left = Math.min(left, i);
+                }
+        return right - left < 0 ? 0 : right - left + 1;
+    }
+
+    //"WWEQ ERQW QWWR WWER QWEQ"
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.findUnsortedSubarray(new int[] {1,3,2,2,2}));
+
+//        System.out.println(test.dayOfTheWeek(1, 1, 1971));
+//        List<Character> list = new ArrayList<>();
+//        list.add('A');
+//        list.add('A');
+//        list.add('B');
+//        list.add('B');
+//        list.add('c');
+//        list.remove((Character)'A');
+//        System.out.println(list);
+//        list.remove((Character)'B');
+//        System.out.println(list);
+//        list.remove((Character)'A');
+//        System.out.println(list);
+
+//        List<List<String>> res = test.solveNQueens(1);
+//        System.out.println(res.size());
+//        for (List<String> list: res)
+//            System.out.println(list);
 //        System.out.println(test.longestCommonSubsequence("cdabbqwe", "acde"));
-        long start = System.currentTimeMillis();
-        System.out.println(test.findSubsequences(new int[] {5,5,6}));
-        long end = System.currentTimeMillis();
-        System.out.println(end - start);
+//        long start = System.currentTimeMillis();
+//        System.out.println(test.findSubsequences(new int[] {5,5,6}));
+//        long end = System.currentTimeMillis();
+//        System.out.println(end - start);
         //,3,-4,4,7,7,-3,-3
 //        int[] res = test.dailyTemperatures(new int[] {89,62,70,58,47,47,46,76,100,70});
 //        for (int r: res)
