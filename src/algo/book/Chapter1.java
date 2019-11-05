@@ -13,7 +13,7 @@ public class Chapter1 {
     // page 4, Euclid's algorithm
     public int gcd(int m, int n) {
         int r = m % n;
-        while (r != 0) {
+        while (n != 0) {
             r = m % n;
             m = n;
             n = r;
@@ -48,10 +48,10 @@ public class Chapter1 {
 
     public static void main(String[] args) {
         Chapter1 ch1 = new Chapter1();
-        ArrayList<Integer> list = ch1.sieve(100000);
-        System.out.println(list.size());
-        System.out.println(list.size());
-       // System.out.println(ch1.gcd(80, 24));
+//        ArrayList<Integer> list = ch1.sieve(100000);
+//        System.out.println(list.size());
+//        System.out.println(list.size());
+        System.out.println(ch1.gcd(80, 10));
     }
 
 }
