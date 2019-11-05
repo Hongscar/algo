@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -907,47 +908,12 @@ public class Test {
     }
 
 
-    //TODO
-    public static int search(int[] nums, int target) {
-        int len = nums.length;
-        int mid = len / 2;
-        int left = 0;
-        int right = len - 1;
-        while (left <= right && left >= 0 && right >= 0) {
-            mid = (left + right) / 2;
-            if (nums[left] == target)
-                return left;
-            if (nums[right] == target)
-                return right;
-            if (nums[mid] == target)
-                return mid;
-            if (left == right)
-                return nums[left] == target ? left : -1;
-            if (nums[mid] > nums[left]) {
-                if (target < nums[left])
-                    left = mid + 1;
-                else if (target < nums[mid])
-                    right = mid - 1;
-                else
-                    left = mid + 1;
-            } else {
-                if (nums[mid] < target) {
-                    int mmid;
-                    if (target < nums[right])
-                        mmid = (mid + right) / 2;
-                    else
-                        mmid = (mid + left) / 2;
-                    if (nums[mmid] == target)
-                        return mmid;
-                    else if (nums[mmid] > target)
-                        right = mmid - 1;
-                    else
-                        left = mmid + 1;
-                } else
-                    right = mid - 1;
-            }
-        }
-        return -1;
+    //33 直接n了,去特么的logn
+    public int search(int[] nums, int target) {
+        ArrayList<Integer> list = new ArrayList<>();
+        for (int num: nums)
+            list.add(num);
+        return list.indexOf(target);
     }
 
     static class Result {
@@ -2026,7 +1992,7 @@ public class Test {
         return true;
     }
 
-    public class TreeNode {
+    static public class TreeNode {
         int val;
         TreeNode left;
         TreeNode right;
@@ -4224,23 +4190,6 @@ public class Test {
         return steps;
     }
 
-    // TODO
-    public String minWindow(String s, String t) {
-        int left = 0;
-        int right = s.length() - 1;
-        String result = " ";
-        for (int i = left; i <= right; i++) {
-            String sub = s.substring(left, right + 1);
-            for (char c: t.toCharArray())
-                if (sub.indexOf(String.valueOf(c)) == -1)
-                    return result;
-            result = sub;
-        }
-
-        return s.contains(t) ? t : " ";     // t.length == 1 ?
-    }
-
-
 //    public ListNode reverseList(ListNode head) {
 //        if (head == null)
 //            return head;
@@ -6047,9 +5996,1004 @@ public class Test {
         return right - left < 0 ? 0 : right - left + 1;
     }
 
-    //"WWEQ ERQW QWWR WWER QWEQ"
+    // 543  没有使用全局变量,只好对两个函数都进行了递归
+    public int diameterOfBinaryTree(TreeNode root) {
+        if (root == null || root.left == null && root.right == null)
+            return 0;
+        int max = 0;
+        int current = helper(root.left) + helper(root.right);
+        max = max > current ? max : current;
+        max = Math.max(diameterOfBinaryTree(root.left), Math.max(max, diameterOfBinaryTree(root.right)));
+        return max;
+    }
+
+    public int helper(TreeNode root) {
+        if (root == null)
+            return 0;
+        if (root.left == null && root.right == null)
+            return 1;
+        return 1 + Math.max(helper(root.left), helper(root.right));
+    }
+
+    // 538      中序遍历是从小到大,反过来就是从大到小了,注意累加
+    int num = 0;
+    public TreeNode convertBST(TreeNode root) {
+        if (root != null) {
+            convertBST(root.right);
+            root.val = root.val + num;
+            num = root.val;
+            convertBST(root.left);
+            return root;
+        }
+        return null;
+    }
+
+    // 448  时间复杂度是2n,空间复杂度是n,较慢
+    public List<Integer> findDisappearedNumbers(int[] nums) {
+        HashSet<Integer> set = new HashSet<>();
+        List<Integer> res = new ArrayList<>();
+        for (int num: nums)
+            set.add(num);
+        for (int i = 1; i <= nums.length; i++)
+            if (!set.contains(i))
+                res.add(i);
+        return res;
+    }
+
+    // 448 时间复杂度是n,空间复杂度是1,并且没有使用Set操作,速度大大加快.
+    // 关键思想跟41题一样,拿自身做bitmap(当然这题要简单很多)
+    // 由于数组里的值是有范围的, 因而我们甚至不用担心超出范围的情况
+    // (以后看到数组的范围就是 1 ~ length的时候,就应该想到拿自身bitmap (当前的值指向的index做出修改)
+    public List<Integer> findDisappearedNumbers1(int[] nums) {
+        List<Integer> res = new ArrayList<>();
+        for (int i = 0; i < nums.length; i++) {
+            int temp = Math.abs(nums[i]);
+            nums[temp - 1] = nums[temp - 1] > 0 ? -nums[temp - 1] : nums[temp - 1];
+        }
+        for (int i = 0; i < nums.length; i++)
+            if (nums[i] > 0)
+                res.add(i + 1);
+        return res;
+    }
+
+    // 65 直接正则表达式
+    public boolean isNumber(String s) {
+        String regex = "^\\s*[+-]?((\\d+(\\.\\d*)?)|\\.\\d+)([eE][+-]?\\d+)?\\s*$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(s);
+        return matcher.matches();
+    }
+
+    // 68       写得很乱,应该根据length,考虑是否insert到ArrayList,这样代码会清晰很多.这个答案意义不大,尽管AC
+    public List<String> fullJustify(String[] words, int maxWidth) {
+        int length = words.length;
+        List<String> res = new ArrayList<>();
+        int currentLength = 0;
+        int beginIndex = 0;
+        int numberOfStr = 0;
+        String temp11 = "";
+        for (int i = beginIndex; i < length;) {
+            if (currentLength + words[i].length() > maxWidth) {         // 因为这里没有包含空格,所以不含等号
+                if (numberOfStr == 1 || numberOfStr == 0) {
+                    if (numberOfStr == 0)
+                        i++;
+                    words[i - 1] = String.format("%-" + maxWidth + "s", words[i - 1]);
+                    res.add(words[i - 1]);
+                    numberOfStr = 0;
+                    currentLength = 0;
+                    beginIndex = i;
+                    temp11 = "";
+                    continue;
+                }
+                String temp = "";
+                for (int j = 0; j < numberOfStr; j++)
+                    temp += words[beginIndex + j] + " ";
+                if (currentLength + words[i].length() == maxWidth) {
+                    temp += words[i];
+                    numberOfStr++;  // final one
+                }
+                // sth do here to handle white space
+                temp = temp.trim();
+                int length1 = temp.length();
+                String[] temps = temp.split("\\s+");
+                int strLength = 0;
+                for (String temp1: temps)
+                    strLength += temp1.length();
+                int diff = maxWidth - strLength;
+                int eachSpace = diff / (numberOfStr - 1);
+                int rest = diff % (numberOfStr - 1);
+                String row = "";
+                for (int k = 0; k < numberOfStr; k++) {
+                    row += temps[k];
+                    if (k == numberOfStr - 1)
+                        break;
+                    for (int kk = 0; kk < eachSpace; kk++)
+                        row += " ";
+                    if (rest != 0) {
+                        row += " ";
+                        rest--;
+                    }
+                }
+                res.add(row);
+                i = beginIndex + numberOfStr;
+                beginIndex = i;
+                numberOfStr = 0;
+                currentLength = 0;
+                temp11 = "";
+            }
+            else if (i != length - 1) {
+                currentLength += words[i].length() + 1;
+                temp11 += words[i] + " ";
+                i++;
+                numberOfStr++;
+            }
+            else {
+                temp11 += words[i];
+                temp11 = String.format("%-" + maxWidth + "s", temp11);
+                res.add(temp11);
+                break;
+            }
+        }
+        return res;
+    }
+
+    // 77
+    public List<List<Integer>> combine(int n, int k) {
+        List<List<Integer>> result = new ArrayList<>();
+        List<Integer> current = new ArrayList<>();
+        combineHelper(result, current, n, k, 1, 0);
+        return result;
+    }
+
+    public void combineHelper(List<List<Integer>> result, List<Integer> current, int n, int k, int now, int prev) {
+        if (now - 1 == k) {
+            result.add(new ArrayList<>(current));
+            return;
+        }
+        for (int i = now; i <= n; i++) {
+            if (i <= prev)
+                continue;
+            current.add(i);
+            combineHelper(result, current, n, k, now + 1, i);
+            current.remove(current.size() - 1);
+        }
+    }
+
+    // 72   一定要清楚,为何要多开拓1的空间?真的仅仅是方便数组操作吗?需要好好利用。
+    // 而且一开始没有考虑到,insert, delete, replace的区别,实际上都是同样如此,只需要考虑新的那两个字符是否相等即可！
+    public int minDistance(String word1, String word2) {
+        int m = word1.length();
+        int n = word2.length();
+        int[][] dp = new int[m + 1][n + 1];
+        for (int i = 0; i <= m; i++)
+            for (int j = 0; j <= n; j++)
+                if (i == 0)
+                    dp[i][j] = j;
+                else if (j == 0)
+                    dp[i][j] = i;
+                else if (word1.charAt(i - 1) == word2.charAt(j - 1))     // 无须操作
+                    dp[i][j] = dp[i - 1][j - 1];
+                else        // 分别是 insert, delete, replace操作
+                    dp[i][j] = Math.min(dp[i - 1][j] + 1, Math.min(dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1));
+        return dp[m][n];
+    }
+
+    // 76   关键: 滑动窗口的思想,一个先行,后行的找更优解.
+    // 其次,不要无脑用HashMap,比如这题,范围也就52个字母,直接数组效率会更高。
+    // 然后,递归的时候,费时的操作千万别在递归里完成.你第一个tMap(数组)知道要在外面初始化,为什么sMap一开始会放在递归函数里？
+    // 最后,要follow normal logic.自己debug的时候就觉得resFreq应该放在if判定前,然而为什么会觉得最后一个case放在判定后
+    // 结果比较接近,就改了呢？不要为了迎合答案而修改,要明白为什么
+    public String minWindow(String s, String t) {
+        if (s.length() == 0 || t.length() == 0)
+            return "";
+        int left = 0, right = 0;
+        int[] tMap = new int[64];
+        int[] windows = new int[3];         // 0 for length, 1 for begin, 2 for end
+        int[] resFreq = new int[64];
+        windows[0] = Integer.MAX_VALUE;
+        for (char c: t.toCharArray())
+            tMap[c - 'A']++;
+        while (right < s.length()) {
+            resFreq[s.charAt(right) - 'A']++;
+            if (!minWindowHelper(resFreq, tMap)) {       // not OK
+                right++;
+            }
+            else {                          // OK, but whether there is a better choice?
+                while (left <= right) {
+                    resFreq[s.charAt(left) - 'A']--;
+                    left++;             // left will move a step to make it unavailable
+                    if (minWindowHelper(resFreq, tMap))    // left + 1 still OK
+                        continue;
+                    else {
+                        int currentLen = right - left + 2;      // one available position is left - 1, not left
+                        if (currentLen < windows[0]) {
+                            windows[0] = currentLen;
+                            windows[1] = left - 1;
+                            windows[2] = right;
+                        }
+                        break;
+                    }
+                }
+                right++;    // 一开始最后一个case出错,原因就在于没有这个步骤,这个步骤丢失了是会陷入死循环的
+                // 那么为什么不会陷入死循环呢?因为前面还加了一条语句,判断currentLen是否最短了,那个路径是错的,导致会提前结束
+                // 后来直接把那句判定删除,加上这句right++,就全部AC了
+            }
+        }
+
+        return windows[0] == Integer.MAX_VALUE ? "" : s.substring(windows[1], windows[2] + 1);
+    }
+
+    public boolean minWindowHelper(int[] sMap, int[] tMap) {
+        for (int i = 0; i < tMap.length; i++)
+            if (tMap[i] == 0)
+                continue;
+            else if (tMap[i] > sMap[i])
+                return false;
+        return true;
+    }
+
+    // 79
+    public boolean exist(char[][] board, String word) {
+        int length = word.length();
+        if (length == 0)
+            return true;
+        int m = board.length;
+        if (m == 0)
+            return false;
+        int n = board[0].length;
+        boolean[][] visited = new boolean[m][n];
+        for (int beginI = 0; beginI < m; beginI++)              // 当前不行,找下一个begin点
+            for (int beginJ = 0; beginJ < n; beginJ++)
+                if (existHelper(board, word, visited, beginI, beginJ, 0))
+                    return true;
+        return false;
+    }
+
+    public boolean existHelper(char[][] board, String word, boolean[][] visited, int pi, int pj, int next) {
+        int length = word.length();
+        int m = visited.length;
+        int n = visited[0].length;
+        if (next == length)
+            return true;
+        int[][] increments = { {0, 0}, {-1, 0}, {1, 0}, {0, 1}, {0, -1}};
+        for (int i = 0; i < increments.length; i++) {
+            pi += increments[i][0];
+            pj += increments[i][1];
+            if (pi >= 0 && pj >= 0 && pi < m && pj < n && !visited[pi][pj]) {
+                if (board[pi][pj] == word.charAt(next)) {
+                    visited[pi][pj] = true;
+                    if (existHelper(board, word, visited, pi, pj, next + 1))
+                        // 如果到达了true,就要返回.否则后面又会被状态reset
+                        return true;
+                    visited[pi][pj] = false;
+                }
+            }
+            pi -= increments[i][0];
+            pj -= increments[i][1];     // rollback
+        }
+        return false;
+    }
+
+    // 80   逻辑不够清晰,需要充分利用排好序的特点
+    public int removeDuplicates1(int[] nums) {
+        int length = nums.length;
+        for (int i = 0; i < length - 1; i++) {
+            for (int j = i + 1; j < length; j++) {
+                if (nums[j] != nums[i] || j == length - 1) {
+                    int times = j - i;
+                    if (j == length - 1 && nums[j] == nums[i]) {        // 避免最后直接pass掉了
+                        if (times - 2 >= 0)             // 特殊情况处理   最后的连续j位置跟前面的有所不同
+                            length -= times - 1;
+                        break;
+                    }
+                    if (times <= 2)
+                        break;
+                    int temp = i + 2;
+                    int k;
+                    for (k = 0; k < times - 2 && j + k < length; k++)
+                        nums[temp + k] = nums[j + k];       // 把重复的全部从后面替换
+                    if (j + k >= length){
+                        length -= times - 2;
+                        break;          // 剩余的不够的,直接中止
+                    }
+                    for (int k2 = j; k2 + times - 2 < length; k2++)
+                        nums[k2] = nums[k2 + times - 2];
+                    length -= times - 2;
+                    i++;        // 跳转
+                    break;
+                }
+            }
+        }
+        return length;
+    }
+
+    // 80 主要逻辑：前两个必定add进去,后面的是否加入到数组里,取决于和在此的前两位数字是否相等。
+    // 比如nums[i]是否要add?只需要看 nums[i] == nums[i - 2] ? 等于,说明至少连续3个相同的了,那么当前的就不add了
+    public int removeDuplicates2(int[] nums) {
+        int length = nums.length;
+        if (length <= 2)
+            return length;
+        int current = 2;
+        for (int i = 2; i < length; i++)
+            if (nums[i] != nums[current - 2])             // 是跟current的位置比,不能跟真的i - 2比
+                nums[current++] = nums[i];
+        return current;
+    }
+
+    // 33 good 二分法
+    public int search1(int[] nums, int target) {
+        return search(nums, 0, nums.length - 1, target);
+    }
+
+    // 如果递归到了乱序数组,那么仍然会自动递归到下一个有序数组中,不会到一个乱序数组中查找的,除非nums[mid]直接等于target
+    public int search(int[] nums, int low, int high, int target) {
+        if (low > high)
+            return -1;
+        int mid = (low + high) / 2;
+        if (nums[mid] == target)
+            return mid;
+        if (nums[mid] < nums[high])                         // 说明右边是有序,(左边是可能有序,可能乱序)
+            if (nums[mid] < target && target <= nums[high])     // 右边有序,那么就是跟high比较
+                return search(nums, mid + 1, high, target);
+            else
+                return search(nums, low, mid - 1, target);
+        else                                                // 说明左边是有序,(右边不一定)
+            if (nums[mid] > target && target >= nums[low])      // 左边有序,所以跟low比较
+                return search(nums, low, mid - 1, target);
+            else
+                return search(nums, mid + 1, high, target);
+        // 判断两边必定有序,只要目的是为了确定是与low比较,还是与high比较！
+    }
+
+    // 90
+    public List<List<Integer>> subsetsWithDup(int[] nums) {
+        Arrays.sort(nums);
+        List<List<Integer>> res = new ArrayList<>();
+        if (nums.length == 0)
+            return res;
+        List<Integer> current = new ArrayList<>();
+        res.add(current);
+        subsetWithDupHelper(res, current, nums, 0);
+        return res;
+    }
+
+    public void subsetWithDupHelper(List<List<Integer>> res, List<Integer> current, int[] nums, int prev) {
+        if (prev == nums.length)
+            return;
+        // HashSet<Integer> set = new HashSet<>();
+        // 无须Set！如果是i == prev,那么就是当前层的第一个！必定能insert。如果不是当前层第一个,就要考虑是否和前面的相同(已排序)
+        for (int i = prev; i < nums.length; i++) {
+            if (i == prev || nums[i] != nums[i - 1]) {            // !set.contains(nums[i])
+                current.add(nums[i]);
+//                set.add(nums[i]);
+                res.add(new ArrayList<>(current));
+                subsetWithDupHelper(res, current, nums, i + 1);
+                if (!current.isEmpty())
+                    current.remove(current.size() - 1);
+            }
+        }
+    }
+
+    // 93
+    public List<String> restoreIpAddresses(String s) {
+        List<String> res = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        restoreIpAddressesHelper(res, s, sb, 0, 0);
+        return res;
+    }
+
+    public boolean restoreIpAddressesHelper(List<String> res, String s, StringBuilder prev, int prev_length, int ip_num) {
+        if (ip_num == 3) {
+            String four = s.substring(prev_length - 3, s.length());
+            if (checkIpAddresses(four)) {
+                prev.append(four);
+                res.add(prev.toString());
+                return true;
+            }
+            return false;
+        }
+        int times = 1;
+        for (int i = prev_length - ip_num; i < s.length(); i++) {       //  - ip_num 是因为 .
+            if (i + times > s.length())
+                return false;                           // 超出了范围,那就直接false
+            String sub = s.substring(i, i + times++);
+            if (sub.length() > 3)
+                return false;                         // 这层已经废了
+            if (!checkIpAddresses(sub)) {
+                i--;
+                continue;
+            }
+            prev.append(sub);
+            prev.append(".");
+            int currentLength = prev.length();
+            boolean flag = restoreIpAddressesHelper(res, s, prev, prev.length(), ip_num + 1);
+            if (flag)
+                prev.delete(currentLength, prev.length());         // 添加成功时,需要把最后一个也删掉
+            prev.delete(prev.length() - times, prev.length());
+            i--;    // 重新来一次,但这次times++了
+
+        }
+        return false;
+    }
+
+    public boolean checkIpAddresses(String s) {
+        if (s.length() == 0 || s.length() > 3 || s.charAt(0) == '0')        // 避免最后的four太长了
+            return false;       // 0 开头不可以
+        int i = Integer.valueOf(s);
+        if (i > 255)
+            return false;
+        return true;
+    }
+
+    // 95, 递归,选mid Node,递归生成左右子树(暂时懒得做了,TODO
+    public List<TreeNode> generateTrees(int n) {
+        boolean[] visited = new boolean[n + 1];
+        visited[0] = true;
+        List<TreeNode> res = new ArrayList<>();
+        for (int i = 1; i <= n; i++) {
+            visited[i] = true;
+            generateTreesHelper(res, new TreeNode(i), visited, n, i);
+        }
+        return res;
+    }
+
+    public TreeNode generateTreesHelper(List<TreeNode> res, TreeNode root, boolean[] visited, int n, int current) {
+        if (n == 0)
+            return null;
+        boolean full = true;
+        for (int i = 1; i <= n; i++) {
+            if (!visited[i]) {
+                full = false;
+                break;
+            }
+        }
+        if (full)
+            return null;        // full
+        for (int i = 1; i <= n; i++) {
+            if (visited[i])
+                continue;
+            root.left = generateTreesHelper(res, root, visited, i - 1, i);
+            root.right = generateTreesHelper(res, root, visited, i + 1, i);
+        }
+        return null;
+    }
+
+    // 100
+    public boolean isSameTree(TreeNode p, TreeNode q) {
+        if (p == null && q == null)
+            return true;
+        if (p == null || q == null)
+            return false;
+        if (p.val != q.val)
+            return false;
+        return isSameTree(p.left, q.left) && isSameTree(p.right, q.right);
+    }
+
+    // 131      回溯又是回溯
+    public List<List<String>> partition(String s) {
+        List<List<String>> res = new ArrayList<>();
+        List<String> current = new ArrayList<>();
+        partitionHelper(res, current, s, 0);
+        return res;
+    }
+
+    public void partitionHelper(List<List<String>> res, List<String> current, String s, int prev) {
+        if (prev == s.length()) {
+            res.add(new ArrayList<>(current));
+            return;
+        }
+
+        int times = 1;
+        for (int i = prev; i < s.length(); i++) {
+            String curr = s.substring(i, i + times);
+
+        }
+
+    }
+
+    // 110
+    public boolean isBalanced(TreeNode root) {
+        if (root == null)
+            return true;
+        int left = getDepth1(root.left, 0);
+        int right = getDepth1(root.right, 0);
+        System.out.println(root + ": " + left + " : " + right);
+        if (left - right > 1 || left - right < -1)
+            return false;
+        return isBalanced(root.left) && isBalanced(root.right);
+    }
+
+    // 增加了一个参数,变成尾递归
+    public int getDepth1(TreeNode root, int currentLength) {
+        if (root == null)
+            return currentLength;
+        return Math.max(getDepth1(root.left, currentLength + 1), getDepth1(root.right, currentLength + 1));
+    }
+
+    // 111
+    public int minDepth(TreeNode root) {
+        if (root == null)
+            return 0;
+        return minDepthHelper(root, 1);
+    }
+
+    public int minDepthHelper(TreeNode root, int current) {
+        if (root == null)
+            return Integer.MAX_VALUE;
+        if (root.left == null && root.right == null)
+            return current;
+        return Math.min(minDepthHelper(root.left, current + 1), minDepthHelper(root.right, current + 1));
+    }
+
+    // 151
+    public String reverseWords1(String s) {
+        s = s.trim();
+        //s.replaceAll("\\s+", " ");
+        String[] strings = s.split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = strings.length - 1; i >= 0; i--) {
+            sb.append(strings[i]);
+            if (i != 0)
+                sb.append(" ");
+        }
+        return sb.toString();
+    }
+
+    // 153
+    public int findMin(int[] nums) {
+        if (nums.length == 0)
+            return 0;
+        return findMinHelper(nums, 0, nums.length - 1, nums[0]);
+    }
+
+    public int findMinHelper(int[] nums, int low, int high, int currentMin) {
+        if (low > high)
+            return currentMin;
+        int mid = (low + high) / 2;
+        if (nums[mid] < nums[high]) {
+            currentMin = currentMin < nums[mid] ? currentMin : nums[mid];
+            high = mid - 1;
+        }
+        else {
+            currentMin = currentMin < nums[low] ? currentMin : nums[low];
+            low = mid + 1;
+        }
+        return findMinHelper(nums, low, high, currentMin);
+    }
+
+    // 37
+    public void solveSudoku(char[][] board) {
+        HashMap<Integer, List<Integer>> rows = new HashMap<>();
+        HashMap<Integer, List<Integer>> columns = new HashMap<>();
+        HashMap<Integer, List<Integer>> subboxes = new HashMap<>();
+        for (int i = 0; i < 9; i++) {
+            rows.put(i, new ArrayList<>());
+            columns.put(i, new ArrayList<>());
+            subboxes.put(i, new ArrayList<>());
+        }
+        boolean[][] exist = new boolean[9][9];      // 回溯的时候,避免改变原来就存在的值
+        for (int i = 0; i < 9; i++)
+            for (int j = 0; j < 9; j++)
+                if (board[i][j] == '.')
+                    continue;
+                else {
+                    List<Integer> row = rows.get(i);
+                    List<Integer> column = columns.get(j);
+                    List<Integer> subbox = subboxes.get(i / 3 * 3 + j / 3);
+                    row.add((int)board[i][j] -'0');
+                    column.add((int)board[i][j] - '0');
+                    subbox.add((int)board[i][j] - '0');
+                    rows.put(i, row);
+                    columns.put(j, column);
+                    subboxes.put(i / 3 * 3 + j / 3, subbox);
+                    exist[i][j] = true;
+                }
+        solveSudokuHelper(board, rows, columns, subboxes, 0, 0, exist, 1, false);
+    }
+
+    // 这个回溯写得有问题,会迭代很多层,复杂度跟暴力法差不多了,所以会直接StackOverflow的. TODO
+    public void solveSudokuHelper(char[][] board, HashMap<Integer, List<Integer>> rows,
+                                  HashMap<Integer, List<Integer>> columns, HashMap<Integer,                                           List<Integer>> subboxes, int i, int j, boolean[][] exist,
+                                  int prev, boolean back) {
+        if (i == 9 || j == 9)
+            return;
+        if (board[i][j] == '.') {
+            for (int k = prev; k <= 9; k++) {
+                List<Integer> row = rows.get(i);
+                if (row.contains(k))
+                    continue;
+                List<Integer> column = columns.get(j);
+                if (column.contains(k))
+                    continue;
+                List<Integer> subbox = subboxes.get(i / 3 * 3 + j / 3);
+                if (subbox.contains(k))
+                    continue;
+                board[i][j] = (char)k;
+                row.add(k);
+                column.add(k);
+                subbox.add(k);
+                rows.put(i, new ArrayList<>(row));
+                columns.put(j, new ArrayList<>(column));
+                subboxes.put(i / 3 * 3 + j / 3, new ArrayList<>(subbox));
+                if (j == 8)
+                    solveSudokuHelper(board, rows, columns, subboxes, i + 1, 0, exist, 1, false);
+                else
+                    solveSudokuHelper(board, rows, columns, subboxes, i, j + 1, exist, 1, false);
+                row.remove((Integer)k);
+                column.remove((Integer)k);
+                subbox.remove((Integer)k);
+                rows.put(i, new ArrayList<>(row));
+                columns.put(j, new ArrayList<>(column));
+                subboxes.put(i / 3 * 3 + j / 3, new ArrayList<>(subbox));
+            }
+            if (j == 0)
+                solveSudokuHelper(board, rows, columns, subboxes, i - 1, 8, exist, 1, true);
+            else
+                solveSudokuHelper(board, rows, columns, subboxes, i, j - 1, exist, 1, true);
+        }
+        else if (!exist[i][j]) {      // 回溯的时候reset状态
+            List<Integer> row = rows.get(i);
+            List<Integer> column = columns.get(j);
+            List<Integer> subbox = subboxes.get(i / 3 * 3 + j / 3);
+            int pre = row.get(row.size() - 1);
+            row.remove(row.size() - 1);
+            column.remove(column.size() - 1);
+            subbox.remove(subbox.size() - 1);
+            board[i][j] = '.';
+            solveSudokuHelper(board, rows, columns, subboxes, i, j, exist, pre + 1, false);
+        }
+        else {
+            if (!back) {
+                if (j == 8)
+                    solveSudokuHelper(board, rows, columns, subboxes, i + 1, 0, exist, 1, false);
+                else
+                    solveSudokuHelper(board, rows, columns, subboxes, i, j + 1, exist, 1, false);
+            }
+            else {
+                if (j == 0)
+                    solveSudokuHelper(board, rows, columns, subboxes, i - 1, 8, exist, 1, true);
+                else
+                    solveSudokuHelper(board, rows, columns, subboxes, i, j - 1, exist, 1, true);
+            }
+        }
+    }
+
+    // 162 寻找峰值 (时间复杂度为 2N)  实际上可以优化成N,因为nums[-1]为-∞,只需要向后比较即可,如果nums[i] > nums[i + 1]
+    // 那么i就是峰值,而i前面必定是单调递增.
+    // 如果要logn,就是二分法,因为峰值的前面必定单调递增
+    public int findPeakElement(int[] nums) {
+        if (nums.length == 1)
+            return 0;
+
+        for (int i = 0; i < nums.length; i++) {
+            if (i == 0) {
+                if (nums[i] > nums[i + 1])
+                    return i;
+                continue;
+            }
+            if (i == nums.length - 1) {
+                if (nums[i] > nums[i - 1])
+                    return i;
+                continue;
+            }
+            if (nums[i] > nums[i - 1] && nums[i] > nums[i + 1])
+                return i;
+        }
+        return -1;          // 空数组的情况
+    }
+
+    // 165
+    public int compareVersion(String version1, String version2) {
+        String[] ver1 = version1.split("\\.");
+        String[] ver2 = version2.split("\\.");
+        int length1 = ver1.length;
+        int length2 = ver2.length;
+        if (length1 > length2) {
+            for (int i = 0; i < length1 - length2; i++)
+                version2 += ".0";
+            ver2 = version2.split("\\.");
+        }
+        else {
+            for (int i = 0; i < length2 - length1; i++)
+                version1 += ".0";
+            ver1 = version1.split("\\.");
+        }
+        for (int i = 0; i < ver1.length; i++) {
+            int i1 = Integer.valueOf(ver1[i]);
+            int i2 = Integer.valueOf(ver2[i]);
+            if (i1 > i2)
+                return 1;
+            else if (i1 < i2)
+                return -1;
+        }
+        return 0;
+    }
+
+    // 165 其实不用对String修改,如果判断i超出了length, 将对应的i1或者i2赋值为0即可
+    public int compareVersion1(String version1, String version2) {
+        String[] ver1 = version1.split("\\.");
+        String[] ver2 = version2.split("\\.");
+        int length1 = ver1.length;
+        int length2 = ver2.length;
+        int length = Math.max(length1, length2);
+        for (int i = 0; i < length; i++) {
+            int i1 = i < length1 ? Integer.valueOf(ver1[i]) : 0;
+            int i2 = i < length2 ? Integer.valueOf(ver2[i]) : 0;
+            if (i1 > i2)
+                return 1;
+            else if (i1 < i2)
+                return -1;
+        }
+        return 0;
+    }
+
+    // 907
+    public int sumSubarrayMins(int[] A) {
+        LinkedList<Integer> stack = new LinkedList<>();
+        int[] a1 = new int[A.length + 1];
+        a1[0] = 0;
+        int res = 0;
+        int mod = (int)Math.pow(10, 9) + 7;
+        for (int i = 0; i < A.length; i++)
+            a1[i + 1] = A[i];
+        for (int i = 0; i < a1.length; i++) {
+            while (!stack.isEmpty() && a1[i] < stack.getFirst()) {
+                int current = stack.removeFirst();
+                res += (current - stack.getFirst()) * (i - current) * a1[current];
+                res %= mod;
+            }
+            stack.addFirst(i);
+        }
+        return res;
+    }
+
+    // 209      n ^ 2
+    public int minSubArrayLen(int s, int[] nums) {
+        int res = Integer.MAX_VALUE;
+        int current;
+        int count;
+        for (int i = 0; i < nums.length; i++) {
+            current = 0;
+            count = 0;
+            for (int j = i; j < nums.length; j++) {
+                current += nums[j];
+                count++;
+                if (current >= s) {
+                    res = res > count ? count : res;
+                    break;
+                }
+            }
+        }
+        return res == Integer.MAX_VALUE ? 0 : res;
+    }
+
+    // 209  n  双指针  right移动n次, left也是最多移动 n次.
+    public int minSubArrayLen1(int s, int[] nums) {
+        int left = 0, right = 0, res = Integer.MAX_VALUE, sum = 0;
+        while (right < nums.length) {
+            while (sum < s && right < nums.length)
+                sum += nums[right++];
+            while (sum >= s && left <= right) {     // 如果s是正整数,那么这里无须考虑left <= right,不会超出的
+                res = res > right - left ? right - left : res;
+                sum -= nums[left++];
+            }
+        }
+        return res == Integer.MAX_VALUE ? 0 : res;
+    }
+
+    public List<Integer> transformArray(int[] arr) {
+        boolean flag = false;
+        List<Integer> res = new ArrayList<>();
+        if (arr.length == 0)
+            return res;
+        if (arr.length == 1) {
+            res.add(arr[0]);
+            return res;
+        }
+        if (arr.length == 2) {
+            res.add(arr[1]);
+            return res;
+        }
+        while (true) {
+            int prev = arr[0];
+            flag = false;
+            for (int i = 1; i < arr.length - 1; i++) {
+                if (arr[i] > prev && arr[i] > arr[i + 1]) {
+                    prev = arr[i];
+                    arr[i] = arr[i] - 1;
+                    flag = true;
+                }
+                else if (arr[i] < prev && arr[i] < arr[i + 1]) {
+                    prev = arr[i];
+                    arr[i] = arr[i] + 1;
+                    flag = true;
+                }
+                else
+                    prev = arr[i];
+            }
+            if (!flag)
+                break;
+        }
+        for (int i: arr)
+            res.add(i);
+        return res;
+    }
+
+    // 5247
+    public int minimumSwap(String s1, String s2) {
+        int i1 = 0, i2 = 0;
+        for (int i = 0; i < s1.length(); i++)
+            if (s1.charAt(i) != s2.charAt(i))
+                if (s1.charAt(i) == 'x')
+                    i1++;
+                else
+                    i2++;
+        if ((i1 + i2) % 2 != 0)
+            return -1;
+        int temp1 = i1 / 2 + i2 / 2;
+        int temp2 = i1 % 2 + i1 % 2;      // temp2 must be 2 actually
+        return temp1 + temp2;
+    }
+
+    // 5248     统计每一个奇数的左边有多少个偶数,还要记录最后一个奇数的右边有多少个偶数
+    // 每一次的总和就是  odds[i] * odds[i + k + 1]  (加1就相当于right的右边偶数,而非左边偶数)
+    public int numberOfSubarrays(int[] nums, int k) {
+        int odd = 0;
+        for (int i = 0; i < nums.length; i++)
+            if (nums[i] % 2 == 0)
+                nums[i] = 0;
+            else {
+                nums[i] = 1;
+                odd++;
+            }
+        int res = 0;
+        List<Integer> list = new ArrayList<>();
+        int[] odds = new int[odd + 1];
+        int j = 0, prev = 0;
+        for (int i = 0; i < nums.length; i++)
+            if (nums[i] == 1)
+                if (j == 0) {
+                    odds[j++] = i + 1;
+                    prev = i;
+                }
+                else {
+                    int tmp = i - prev;
+                    prev = i;
+                    odds[j++] = tmp;
+                }
+        odds[j] = nums.length - prev;    // the rest
+        int left = 0, right = k;
+        int i = 0;
+        while (right <= j)
+            res += odds[left++] * odds[right++];
+        return res;
+    }
+
+    // 167
+    public int[] twoSum(int[] numbers, int target) {
+        int left = 0, right = numbers.length - 1;
+        int[] res = new int[2];
+        while (true) {
+            int current = numbers[left] + numbers[right];
+            if (current == target)
+                break;
+            else if (current < target)
+                left++;
+            else
+                right--;
+        }
+        res[0] = 1 + left;
+        res[1] = 1 + right;
+        return res;
+    }
+
+    // 172 只有2*5的结果才有0,其他的都可以简化为这个形式,比如6*5 = 2 * 5 *3(3无关紧要
+    // 所以只需要数2和5的最小个数,显然5的个数会是更少
+    // 而例如125可以分为5 * 5 * 5
+    public int trailingZeroes(int n) {
+        int res = 0;
+        while (n >= 5) {
+            res += n / 5;
+            n /= 5;
+        }
+        return res;
+    }
+
+    // 233 分别统计个位,十位,百位。。。的个数
+    public int countDigitOne(int n) {
+        int num = n, i = 1, s = 0;
+        while (num != 0) {
+            if (num % 10 == 0)
+                s += num / 10 * i;
+            if (num % 10 == 1)
+                s += num / 10 * i + (n % i) + 1;
+            if (num % 10 > 1)
+                s += Math.ceil(num / 10.0) * i;
+            num /= 10;
+            i *= 10;
+        }
+        return s;
+    }
+
+    // 793  这个时间复杂度为n,会超时
+    public int preimageSizeFZF(int K) {
+        int numOfZeros = 0;
+        int current = 5;
+        int prev = 0;
+        while (numOfZeros <= K) {
+            prev = 0;
+            int temp = current;
+            while (temp % 5 == 0 && temp >= 5) {
+                prev++;
+                temp /= 5;
+            }
+            numOfZeros += prev;
+            current += 5;
+        }
+        if (numOfZeros - prev != K)
+            return 0;
+        return 5;
+    }
+
+    // 793 二分
+    public int preimageSizeFZF1(int K) {
+        // 确定阶梯值范围,最终得到 K < start
+        int start = 1;
+        while (start < K)
+            start = start * 5 + 1;      // 递推: f(x + 1) = f(x) * 5 + 1 (x为5次幂)
+        // 确定范围之后,进行精确查找
+        while (start > 1) {
+            // 只有5以下的阶乘才会出现start - 1成立,其他情况不会存在,因为任何一个阶段分界值都包含超过1个5
+            if (start - 1 == K)
+                return 0;
+
+            // 从f(x + 1)推导出f(x)
+            start = (start - 1) / 5;
+
+            // 获取剩余值,进行下一阶梯运算
+            K %= start;
+        }
+        return 5;
+    }
+
+    //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.preimageSizeFZF1(153));
+        System.out.println(test.numberOfSubarrays(new int[] {1, 1, 2, 1, 1}, 3));
+        System.out.println(test.minimumSwap("xx", "yy"));
+        System.out.println(test.transformArray(new int[] {1, 6, 3, 4, 3, 5}));
+        int MOD = 1_000_000_007;
+        System.out.println(MOD);
+        char[][] board = {{'5','3','.','.','7','.','.','.','.'},{'6','.','.','1','9','5','.','.','.'},
+                {'.','9','8','.','.','.','.','6','.'},{'8','.','.','.','6','.','.','.','3'},
+                {'4','.','.','8','.','3','.','.','1'},{'7','.','.','.','2','.','.','.','6'},
+                {'.','6','.','.','.','.','2','8','.'},{'.','.','.','4','1','9','.','.','5'},
+                {'.','.','.','.','8','.','.','7','9'}};
+        //test.solveSudoku(board);
+//        System.out.println(6 / 3 * 3);
+//        System.out.println(test.findMin(new int[] {}));
+//
+//        System.out.println(test.restoreIpAddresses("2736786374048"));
+//        //String str = "aaa";
+//        //str = String.format("%-5s", str);
+//        //System.out.println(str);
+//        System.out.println(test.minWindow("ab", "a"));
+        TreeNode t1 = new TreeNode(3);
+        TreeNode t2 = new TreeNode(9);
+        TreeNode t3 = new TreeNode(20);
+        TreeNode t4 = new TreeNode(15);
+        TreeNode t5 = new TreeNode(7);
+        TreeNode t6 = new TreeNode(4);
+        TreeNode t7 = new TreeNode(4);
+        t1.left = t2;
+        t1.right = t3;
+        t3.left = t4;
+        t3.right = t5;
+       // t4.left = t6;
+       // t4.right = t7;
+        System.out.println(test.isBalanced(t1));
+        TreeNode res = test.convertBST(t1);
         System.out.println(test.findUnsortedSubarray(new int[] {1,3,2,2,2}));
 
 //        System.out.println(test.dayOfTheWeek(1, 1, 1971));
