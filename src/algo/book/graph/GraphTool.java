@@ -1,7 +1,7 @@
 package algo.book.graph;
 
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
@@ -101,6 +101,9 @@ public class GraphTool {
 
     // true for acyclic, false for cyclic
     public boolean isAcyclic(Graph g) {
+        if (!g.getIsDirected())
+            return false;           // 目前暂时把非有向图默认为无环,后续再修改 TODO
+                                    // 因为我这里仅仅使用拓扑去判断是否有环,而无向图是不存在拓扑这种东西的
         LinkedList<Integer> queue = new LinkedList<>();
         return topSortHelper(g, queue, true);
     }
@@ -195,6 +198,43 @@ public class GraphTool {
         return v;
     }
 
+    // TODO
+    public void prim(Graph g, int start) {
+        int numVertexs = g.getNumVertex();
+        setUnvisited(g);
+        int[] distance = new int[numVertexs];
+        distance = initDijkstra(numVertexs, start);
+        List<Integer> vertexs = new ArrayList<>();          // Store closest vertex
+        for (int i = 0; i < numVertexs; i++)
+            vertexs.add(0);
+        int[] mark = g.getMarks();
+        for (int i = 0; i < numVertexs; i++) {              // Process the vertices
+            int v = minVertex(g, distance);
+            mark[v] = VISITED;
+            if (v != start)
+                addEdgeToMST(vertexs, v);                   // Add edge to MST
+            if (distance[v] == INFINITE)
+                return;                                     // Unreachable vertices
+            for (int w = g.first(v); w < numVertexs; w = g.next(v, w))
+                if (distance[w] > g.getWeight(v, w)) {
+                    distance[w] = g.getWeight(v, w);        // Update distance
+                    vertexs.set(w, v);                         // Where it came from
+                }
+        }
+        System.out.println(vertexs);
+        for (int dis: distance)
+            System.out.print(dis + ", ");
+        System.out.println();
+        int re = 0;
+        for (int ver: vertexs)
+            re += ver;
+        System.out.println(re);
+    }
+
+    public void addEdgeToMST(List<Integer> vertexs, int v) {
+        // form a minimum-cost spanning tree
+    }
+
     public static void main(String[] args) {
         Graph g = new MyGraph(6);
         g.setEdge(0, 2);
@@ -232,7 +272,37 @@ public class GraphTool {
         g3.setEdge(3, 4, 12);
         g3.setEdge(4, 1, 12);
         System.out.println("---=-=---");
-        tool.topSortWithQueue(g3);
-        System.out.println(tool.isAcyclic(g3));
+       // tool.topSortWithQueue(g3);
+        //System.out.println(tool.isAcyclic(g3));
+
+        Graph g4 = new MyGraph(6, false);
+        g4.setEdge(0, 2, 7);
+        g4.setEdge(0, 4, 9);
+        g4.setEdge(1, 2, 5);
+        g4.setEdge(1, 5, 6);
+        g4.setEdge(2, 3, 1);
+        g4.setEdge(2, 5, 2);
+        g4.setEdge(3, 5, 2);
+        g4.setEdge(4, 5, 1);
+        //tool.DFSgraphTraverse(g4);
+        System.out.println();
+        //tool.BFSgraphTraverse(g4);
+        System.out.println();
+        //System.out.println(tool.isAcyclic(g4));
+        //tool.topSort(g4);
+        System.out.println();
+        tool.prim(g4, 0);
+
+        Graph g5 = new MyGraph(6, false);
+        g5.setEdge(0, 1, 10);
+        g5.setEdge(0, 3, 20);
+        g5.setEdge(0, 2, 5);
+        g5.setEdge(1, 2, 3);
+        g5.setEdge(1, 3, 5);
+        g5.setEdge(2, 4, 15);
+        g5.setEdge(3,4, 11);
+        g5.setEdge(4, 5, 3);
+        g5.setEdge(3, 5, 10);
+        tool.prim(g5, 0);
     }
 }

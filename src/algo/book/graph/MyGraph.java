@@ -13,21 +13,27 @@ public class MyGraph implements Graph {
     private static final int UNVISITED = 0;
     private static final int VISITED = 1;
     private static final int DEFAULT_LENGTH = 10;
+    private static final boolean IS_DIRECTED = true;
     private int numVertex;                  // we can't delete vertex currently
     private int numEdge;
     private ArrayList<Edge> edges;          // no use currently
     private int[] mark;                 // mark is used to traversals
     private int[][] matrix;             // save the weight of each edege, return 0 if non-exist
+    private boolean is_directed;
 
     public MyGraph() {
         this(DEFAULT_LENGTH);
     }
 
     public MyGraph(int numVert) {
-        Init(numVert);
+        Init(numVert, true);
     }
 
-    private void Init(int n) {
+    public MyGraph(int numVert, boolean is_directed) {
+        Init(numVert, is_directed);
+    }
+
+    private void Init(int n, boolean is_directed) {
         numVertex = n;
         numEdge = 0;
         edges = new ArrayList<>();
@@ -35,6 +41,7 @@ public class MyGraph implements Graph {
         for (int i = 0; i < numVertex; i++)
             mark[i] = UNVISITED;
         matrix = new int[n][n];
+        this.is_directed = is_directed;
     }
 
     @Override
@@ -45,6 +52,11 @@ public class MyGraph implements Graph {
     @Override
     public int[][] getMatrixs() {
         return matrix;
+    }
+
+    @Override
+    public boolean getIsDirected() {
+        return is_directed;
     }
 
     @Override
@@ -73,12 +85,14 @@ public class MyGraph implements Graph {
         if (matrix[v1][v2] == 0)
             numEdge++;
         matrix[v1][v2] = wt;
+        if (!is_directed)
+            matrix[v2][v1] = wt;    // if non-directed, both v1-v2 and v2-v1 are the same
     }
 
     @Override
     public void setEdge(int v1, int v2) {
         setEdge(v1, v2, 1);     // default weight set it 1
-        setEdge(v2, v1, 1);
+        //setEdge(v2, v1, 1);
     }
 
     @Override

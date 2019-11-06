@@ -40,4 +40,6 @@ public interface Graph {
 
     public void setNumEdge(int edge);
 
+    public boolean getIsDirected();
+
 }

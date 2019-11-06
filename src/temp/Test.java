@@ -6956,13 +6956,236 @@ public class Test {
         return 5;
     }
 
+    // 316  构造一个stack,如果遇到一个新字符,就与栈顶比较,如果后面还有跟栈顶一样的元素,就把栈顶元素去掉(用while)
+    public String removeDuplicateLetters(String s) {
+        LinkedList<Character> stack = new LinkedList<>();
+        for (int i = 0; i < s.length(); i++) {
+            Character c = s.charAt(i);
+            if (stack.contains(c))
+                continue;
+            while (!stack.isEmpty() && c < stack.getFirst() && s.indexOf(stack.getFirst(), i) != -1)
+                stack.removeFirst();
+            stack.addFirst(c);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Character c: stack)
+            sb.append(c);
+        return sb.reverse().toString();
+    }
+
+    // 306
+    public boolean isAdditiveNumber(String num) {
+        int length = num.length();
+        for (int i = 1; i <= length / 2; i++) {
+            for (int j = 1; j <= length / 2; j++) {
+                int max = Math.max(i, j);
+                if (num.length() - i - j < max)         // 100200300, 只要剩下的长度跟max的i,j相等,还是可能true的
+                    break;
+                if (isAdditiveNumberHelper(num, i, j))
+                    return true;
+                if (num.charAt(i) == '0')       // 只允许0,不允许0xxx
+                    break;
+            }
+            if (num.charAt(0) == '0')
+                break;                  // 同样的,first也是只允许0,不允许0xxx
+        }
+        return false;
+    }
+
+    public boolean isAdditiveNumberHelper(String num, int first, int second) {
+        int begin = 0;
+        for (int i = first + second; i < num.length();) {
+            long first1 = Long.valueOf(num.substring(begin, first));
+            long second1 = Long.valueOf(num.substring(first, first + second));
+            long sum = first1 + second1;
+            String s = String.valueOf(sum);
+            if (first + second + s.length() > num.length () ||
+                    !num.substring(first + second, first + second + s.length()).equals(s))
+                return false;       // 如果不行,说明这两个first跟second选错了,重选
+            if (first + second + s.length() == num.length())
+                break;
+            begin = first;
+            first += second;            // 注意以下begin, first, second的改变值就好
+            second = s.length();
+        }
+        return true;
+    }
+
+    // 842 题目规定了符合的数必定是Integer范围内,但我们遍历的时候还是要自己考虑Integer.MAX_VALUE跟Long.MAX_VALUE的情况
+    public List<Integer> splitIntoFibonacci(String num) {
+        int length = num.length();
+        List<Integer> res = new ArrayList<>();
+        for (int i = 1; i <= length / 2 && i <= 10; i++) {          // Integer.MAX的位数是10
+            for (int j = 1; j <= length / 2 && j <= 10; j++) {      // Long.MAX的位数是19
+                int max = Math.max(i, j);
+                if (num.length() - i - j < max)
+                    break;
+                if (isAdditiveNumberHelper(num, i, j, res))
+                        return res;
+                if (num.charAt(i) == '0')       // 只允许0,不允许0xxx
+                    break;
+            }
+            if (num.charAt(0) == '0')
+                break;                  // 同样的,first也是只允许0,不允许0xxx
+        }
+        return res;
+    }
+
+    // 一开始直接用了最stupid的方法,try-catch,可行但效率并不高。 63ms
+    // 后来想想主要是甚至还可能超出Long.MAX,其实直接判定长度不超过10即可(Integer.MAX的位数是10)
+    // 于是在最开始的循环里加上了i <= 10 跟 j <= 10,就直接把异常处理去掉了,时间 6ms
+    // 可见,异常处理虽然简单粗暴,但实际上所耗费的资源也是极大的
+    public boolean isAdditiveNumberHelper(String num, int first, int second, List<Integer> res) {
+        int begin = 0;
+        int first1, second1, sum;
+        for (int i = first + second; i < num.length();) {
+            String sub1 = num.substring(begin, first);
+            String sub2 = num.substring(first, first + second);
+            long f1 = Long.valueOf(sub1);
+            long s1 = Long.valueOf(sub2);
+            long sum1 = f1 + s1;
+            if (f1 > Integer.MAX_VALUE || s1 > Integer.MAX_VALUE || sum1 > Integer.MAX_VALUE) {
+                res.clear();
+                return false;
+            }
+            first1 = Integer.valueOf(sub1);
+            second1 = Integer.valueOf(sub2);
+            sum = first1 + second1;
+            String s = String.valueOf(sum);
+            if (first + second + s.length() > num.length () ||
+                    !num.substring(first + second, first + second + s.length()).equals(s)) {
+                res.clear();
+                return false;
+            }
+            res.add(first1);
+            if (first + second + s.length() == num.length()) {
+                res.add(second1);
+                res.add(sum);
+                break;
+            }
+            begin = first;
+            first += second;
+            second = s.length();
+        }
+        return true;
+    }
+
+    // 289  可以用temp数组,但这样空间复杂度为n,直接在原数组上进行标记即可
+    // -1 表示 1变成 0 , -2表示 0变成 1
+    public void gameOfLife(int[][] board) {
+        int m = board.length;
+        if (m == 0)
+            return;
+        int n = board[0].length;
+        if (n == 0)
+            return;
+//        int[][] temp = new int[m][n];
+//        for (int i = 0; i < m; i++)
+//            for (int j = 0; j < n; j++)
+//                temp[i][j] = board[i][j];
+        int[][] eights = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < n; j++) {
+                int live = 0;
+                for (int k = 0; k < eights.length; k++) {
+                    int tempI = i + eights[k][0];
+                    int tempJ = j + eights[k][1];
+                    if (tempI < 0 || tempJ < 0 || tempI >= m || tempJ >= n)
+                        continue;
+                    if (board[tempI][tempJ] == 1 || board[tempI][tempJ] == -1)
+                        live++;
+                }
+                if ((board[i][j] == 1 || board[i][j] == -1) && (live < 2 || live > 3))
+                    //temp[i][j] = 0;
+                    board[i][j] = -1;
+                if ((board[i][j] == 0 || board[i][j] == -2) && live == 3)
+                    //temp[i][j] = 1;
+                    board[i][j] = -2;
+            }
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < n; j++)
+                if (board[i][j] == -1)
+                    board[i][j] = 0;
+                else if (board[i][j] == -2)
+                    board[i][j] = 1;
+    }
+
+    // 274          用哈希表的方法
+    public int hIndex(int[] citations) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        int length = citations.length;
+        Arrays.sort(citations);
+        for (int i = 0; i < length; i++) {
+            Integer integers = map.get(citations[i]);
+            if (integers != null)
+                continue;
+            map.put (citations[i], length - i);
+        }
+        int res = 0;
+        List<Map.Entry<Integer, Integer>> list = new ArrayList<>(map.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<Integer, Integer>>() {
+            @Override
+            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
+                return o2.getValue().compareTo(o1.getValue());  // 逆序,即根据value从大到小排列
+            }
+        });
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            Map.Entry<Integer, Integer> entry = list.get(i);
+            int key = entry.getKey();
+            int value = entry.getValue();
+            if (key < value)
+                if (i != size - 1)
+                    continue;           // 如果是最后一系列数是result,这时就不能简单地continue！
+                else {
+                    res = Math.min(list.get(i).getKey(), list.get(i).getValue());   // 此时就是key跟value取最小
+                    break;
+                }
+            if (i == 0)
+                res = list.get(i).getValue();       // 考虑i == 0的情况
+            else
+                res = Math.max(list.get(i).getValue(), list.get(i - 1).getKey());
+                // i是第一个刚好开始 key > value的,然后就是取当前的value和上一个的key的最大值
+                // (一开始举的例子具有迷惑性,导致卡了很久)
+            break;
+        }
+        return res;
+    }
+
+    // 274      感觉我弄复杂了,什么前一个的key跟当前的value,其实要返回的就是 length - i,当且仅当length - i <= c[i]
+    // 但是呢,理论上哈希表的时间复杂度可以到达n(但我上面转换成list再排序,太费时,其实不需要这样做),而这里复杂度是nlogn
+    public int hIndex1(int[] citations) {
+        if(citations.length < 1)
+            return 0;
+        Arrays.sort(citations);
+        for (int i = 0; i < citations.length; i++)
+            if (citations.length - i <= citations[i])
+                return citations.length - i;
+        return 0;
+    }
+
     //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
-        System.out.println(test.preimageSizeFZF1(153));
-        System.out.println(test.numberOfSubarrays(new int[] {1, 1, 2, 1, 1}, 3));
-        System.out.println(test.minimumSwap("xx", "yy"));
-        System.out.println(test.transformArray(new int[] {1, 6, 3, 4, 3, 5}));
+        int[] tem =
+                new int[] {6,6,6,6,6,6,6};
+        Arrays.sort(tem);
+        for (int i = 0; i < tem.length; i++)
+            System.out.print(tem[i] + ", ");
+        System.out.println();
+        System.out.println(test.hIndex(tem));
+
+        System.out.println(true || false && false || false);  // ==> t || f || f = t
+        System.out.println((true || false) && (false || false));    // ==> t && f = f
+        //int[][] res = test.gameOfLife(new int[][] {{0,1,0},{0,0,1},{1,1,1},{0,0,0}});
+        System.out.println(Integer.MAX_VALUE);
+        System.out.println(Long.MAX_VALUE);
+        System.out.println(test.isAdditiveNumber("0235813"));
+        System.out.println(test.removeDuplicateLetters("bcabc"));
+//        System.out.println(test.preimageSizeFZF1(153));
+//        System.out.println(test.numberOfSubarrays(new int[] {1, 1, 2, 1, 1}, 3));
+//        System.out.println(test.minimumSwap("xx", "yy"));
+//        System.out.println(test.transformArray(new int[] {1, 6, 3, 4, 3, 5}));
         int MOD = 1_000_000_007;
         System.out.println(MOD);
         char[][] board = {{'5','3','.','.','7','.','.','.','.'},{'6','.','.','1','9','5','.','.','.'},
@@ -6992,9 +7215,9 @@ public class Test {
         t3.right = t5;
        // t4.left = t6;
        // t4.right = t7;
-        System.out.println(test.isBalanced(t1));
-        TreeNode res = test.convertBST(t1);
-        System.out.println(test.findUnsortedSubarray(new int[] {1,3,2,2,2}));
+//        System.out.println(test.isBalanced(t1));
+//        TreeNode res = test.convertBST(t1);
+//        System.out.println(test.findUnsortedSubarray(new int[] {1,3,2,2,2}));
 
 //        System.out.println(test.dayOfTheWeek(1, 1, 1971));
 //        List<Character> list = new ArrayList<>();
