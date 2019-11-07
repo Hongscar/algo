@@ -7164,9 +7164,255 @@ public class Test {
         return 0;
     }
 
-    //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
+    // 207      50ms, use DFS recursively
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        int[][] adjacency = new int[numCourses][numCourses];
+        int[] flags = new int[numCourses];
+        // 0 for never visited, 1 for visited this times, -1 for visited by other nodes
+        int length = prerequisites.length;
+        for (int i = 0; i < length; i++)
+            adjacency[prerequisites[i][0]][prerequisites[i][1]] = 1;
+        // set the prerequisites become the adjacency matrix
+        for (int i = 0; i < numCourses; i++)
+            if (!dfs(adjacency, flags, i))
+                return false;
+        return true;
+    }
+
+    // actually it cost n ^ 2 time complexity, so it's not high efficiency
+    public boolean dfs(int[][] adjacency, int[] flags, int i) {
+        if (flags[i] == 1)
+            return false;
+        // it means it exists a cycle cause that one node visited twice by the current node
+        if (flags[i] == -1)
+            return true;
+        // this node has been visited by others, so we can stop here
+        int length = adjacency.length;
+        flags[i] = 1;   // visited this times
+        for (int j = 0; j < length; j++)
+            if (adjacency[i][j] == 1 && !dfs(adjacency, flags, j))
+                return false;
+        // dfs from this node and check whether there is a cycle
+        flags[i] = -1;
+        // well there is no cycle in these nodes, so we set it status -1
+        // and finish this recursion.
+        return true;
+        // if it's cyclic, the result is can not finish, otherwise, it can finish.
+    }
+
+    // 207 this time we use a table to save the indegree of each node
+    // we delete all the nodes that's indegree is 0
+    // finially if there still exists nodes, it means it's cyclic.      16ms, faster than DFS
+    public boolean canFinish1(int numCourses, int[][] prerequisites) {
+        int[] indegrees = new int[numCourses];
+        int length = prerequisites.length;
+        for (int i = 0; i < length; i++)
+            indegrees[prerequisites[i][1]]++;
+        boolean check = false;  // if we can't find a node has 0 indegree, finish the while cycle
+        boolean[] visited = new boolean[numCourses];
+        // check whether all the nodes have been gone
+        int num = 0;        // to count the node that's visited(deleted)
+        while (true) {
+            check = false;
+            for (int i = 0; i < numCourses; i++)
+                if (indegrees[i] == 0 && !visited[i]) {
+                    check = true;
+                    visited[i] = true;      // it means we delete this node!
+                    num++;
+                    for (int[] prerequisite: prerequisites)
+                        if (prerequisite[0] == i)
+                            indegrees[prerequisite[1]]--;
+                    // the indegree of node i is 0, we delete it,and those nodes that's pointed by i
+                    // we need to decrease they indegree by 1.
+                }
+            if (!check)
+                break;      // finish the while cycle.
+        }
+        if (num != numCourses)  // still exists nodes, so it's cyclic, can't finish
+            return false;
+        return true;            // acyclic,can be finished.
+    }
+
+    // 210
+    public int[] findOrder(int numCourses, int[][] prerequisites) {
+        int[] res = new int[numCourses];
+        if (canFinish1(numCourses, prerequisites, res))
+            return res;     // can finish so return res,but we need to reverse it!
+        return new int[0];         // acyclic then return am empty array
+    }
+
+    public boolean canFinish1(int numCourses, int[][] prerequisites, int[] res) {
+        int[] indegrees = new int[numCourses];
+        int length = prerequisites.length;
+        for (int i = 0; i < length; i++)
+            indegrees[prerequisites[i][1]]++;
+        boolean check = false;
+        // if we can't find a node has 0 indegree, finish the while cycle
+        boolean[] visited = new boolean[numCourses];
+        // check whether all the nodes have been gone
+        int num = 0;        // to count the node that's visited(deleted)
+        while (true) {
+            check = false;
+            for (int i = 0; i < numCourses; i++)
+                if (indegrees[i] == 0 && !visited[i]) {
+                    check = true;
+                    visited[i] = true;      // it means we delete this node!
+                    res[num++] = i;
+                    for (int[] prerequisite: prerequisites)
+                        if (prerequisite[0] == i)
+                            indegrees[prerequisite[1]]--;
+                    // the indegree of node i is 0, we delete it,and those nodes that's pointed by i
+                    // we need to decrease they indegree by 1.
+                }
+            if (!check)
+                break;      // finish the while cycle.
+        }
+        if (num != numCourses)  // still exists nodes, so it's cyclic, can't finish
+            return false;
+        for (int i = 0; i < numCourses / 2; i++) {
+            int temp = res[i];
+            res[i] = res[numCourses - 1 - i];
+            res[numCourses - 1 - i] = temp;      // reverse the array
+        }
+        return true;            // acyclic,can be finished.
+    }
+
+    // 131 分治
+    public List<List<String>> partition1(String s) {
+        return partition1Helper(s, 0);
+    }
+
+    private List<List<String>> partition1Helper(String s, int start) {
+        if (start == s.length()) {
+            List<String> list = new ArrayList<>();
+            List<List<String>> res = new ArrayList<>();
+            res.add(list);
+            return res;         // 返回一个List<List<String>>,包含一个空的List<String>
+        }
+        List<List<String>> res = new ArrayList<>();
+        for (int i = start; i < s.length(); i++)
+            if (isPalindrome3(s.substring(start, i + 1))) {
+                String left = s.substring(start, i + 1);
+                for (List<String> list: partition1Helper(s, i + 1)) {
+                    // 很巧妙地从后向前递归。 aabb = a + abb = a + a + bb = a + a + b + b
+                    // 最开始先return一个空的res,这时候是从后往前add.
+                    list.add(0, left);
+                    res.add(list);
+                }
+            }
+        return res;
+    }
+
+    private boolean isPalindrome3(String s) {
+        int i = 0, j = s.length() - 1;
+        while (i < j)
+            if (s.charAt(i++) != s.charAt(j--))
+                return false;
+        return true;
+    }
+
+    // 131 分治优化,使用一个dp二维数组去维护值,减少重复遍历的操作
+    public List<List<String>> partition2(String s) {
+        int length = s.length();
+        boolean[][] dp = new boolean[length][length];
+        // 这里是根据i~j之间的len来循环的
+        // 不能直接for i in range(1, length), for j int range(1, length)
+        // 为什么呢,比如我们要get dp[2][5]的时候需要get dp[3][4],如果是顺序循环,这时候dp[3][4]还没有被处理
+        // 所以正确的循环顺序就是 根据len来循环！
+        for (int len = 1; len <= length; len++) {
+            for (int i = 0; i <= length - len; i++) {
+                int j = i + len - 1;
+                dp[i][j] = s.charAt(i) == s.charAt(j) && (len < 3 || dp[i + 1][j - 1]);
+            }
+        }
+        return partition2Helper(s, 0, dp);
+    }
+
+    // dp[i][j]表示 s.substring(i, j + 1)是否是回文串,减少了重复的操作(比如a是回文,那么bbabb,fffqaqfff也是回文)
+    public List<List<String>> partition2Helper(String s, int start, boolean[][] dp) {
+        if (start == s.length()) {
+            List<List<String>> res = new ArrayList<>();
+            List<String> list = new ArrayList<>();
+            res.add(list);
+            return res;
+        }
+        List<List<String>> res = new ArrayList<>();
+        for (int i = start; i < s.length(); i++)
+            if (dp[start][i]) {
+                String left = s.substring(start, i + 1);
+                for (List<String> list: partition2Helper(s, i + 1, dp)) {
+                    list.add(0, left);
+                    res.add(list);
+                }
+            }
+        return res;
+    }
+
+    // 131 回溯也可以解决,只要画出递归树
+    public List<List<String>> partition3(String s) {
+        List<List<String>> res = new ArrayList<>();
+        List<String> current = new ArrayList<>();
+        partition3Helper(s, current, res, 0);
+        return res;
+    }
+
+    public void partition3Helper(String s, List<String> current, List<List<String>> res, int start) {
+        if (s.length() == start) {
+            res.add(new ArrayList<>(current));
+            return;             // 递归分割,直到剩下空子串,就返回
+        }
+        for (int i = start; i < s.length(); i++) {
+            String sub = s.substring(start, i + 1);
+            if (isPalindrome3(sub)) {           // 也可以用dp代替,效率更高！
+                current.add(sub);
+                partition3Helper(s, current, res, i + 1);
+                // 不是start + 1, 而是 i + 1,因为i有可能已经横跨了几个长度,不一定len为 1
+                current.remove(current.size() - 1);     // 删除最后那个,也就是上面才刚刚add的sub(Status reset)
+            }
+        }
+    }
+
+    //132
+    // a tricky solution    TODO NOT FINISH
+    public int minCut(String s) {
+        int length = s.length();
+        if (length <= 1)
+            return 0;
+        int[] cut = new int[length + 1];    // number of cuts for the first k-characters
+        for (int i = 0; i <= length; i++)
+            cut[i] = i - 1;     //initialize, if a string have x characters, it needs x - 1 times to cut at most
+        // ps: why we need to set cut[0] to -1 ?
+        // When the whole characters is palindrome,we need to compare the cut[length] with cut[0] + 1
+        // Actually in this case, the result is 0, if we don't set cut[0] to -1, then the final result is 1,which is wrong.
+
+        for (int i = 0; i < length; i++) {   // i is the center character of the palindrome,we expand it from its center
+            for (int j = 0; i >= j && i + j < length; j++)   // j represents the 'radius' of the palindrome.
+                // Apparently, j <= i is a must, and i + j < n is prevent the OutOfBoundsException
+                if (s.charAt(i - j) != s.charAt(i + j))
+                    break;
+                else
+                    cut[i + j + 1] = Math.min(cut[i + j + 1], 1 + cut[i - j]);
+            // we know that s.substring(i - j, i + j + 1) is a palindrome, so we needn't cut it
+            // and if we need to cut s.substring(0, i + j + 1), we only need to cut between 0 and i - j - 1
+            // and one more cut at the i - j obviously.
+
+            for (int j = 1; i >= j - 1 && i + j < length; j++)   // the former is for the odd length, here is the even length
+                if (s.charAt(i - j + 1) != s.charAt(i + j))
+                    break;
+                else
+                    cut[i + j + 1] = Math.min(cut[i + j + 1], cut[i - j + 1]);
+        }
+        return cut[length];
+    }
+
+        //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        int[] dp = IntStream.range(-1, 10).toArray();
+        for (int i: dp)
+            System.out.print(i + ", ");
+        System.out.println(test.partition3("aab"));
+        System.out.println(test.findOrder(4, new int[][] {{1,0}, {2,0}, {3,1}, {3,2}}));
         int[] tem =
                 new int[] {6,6,6,6,6,6,6};
         Arrays.sort(tem);
