@@ -7405,9 +7405,131 @@ public class Test {
         return cut[length];
     }
 
+    // 189      时间复杂度 n, 空间复杂度 k
+    public void rotate(int[] nums, int k) {
+        int n = nums.length;
+        k %= n;
+        if (k == 0)
+            return;
+        boolean[] visited = new boolean[k];
+        int from = 0, to = k;
+        int prev = nums[from];
+        for (int i = 0; i < n; i++) {
+            int temp = nums[to];
+            nums[to] = prev;
+            prev = temp;
+            if (from < k)
+                visited[from] = true;           // record the first-k elements
+            from = to;  // next
+            to = (to + k) % n;
+            if (from < k && visited[from]) {        // go to next.
+                from++;
+                to++;
+                prev = nums[from];                  // temp need to change
+            }
+        }
+        System.out.println(nums);
+        System.out.println("xxx");
+    }
+
+    // 205
+    public boolean isIsomorphic(String s, String t) {
+        HashMap<Character, List<Integer>> map = new HashMap<>();
+        int length = s.length();
+        for (int i = 0; i < length; i++) {
+            Character c = s.charAt(i);
+            List<Integer> list = map.getOrDefault(c, new ArrayList<>());
+            list.add(i);
+            map.put(c, list);
+        }
+        int n = map.size();
+        HashSet<Character> set = new HashSet<>();
+        for (Map.Entry<Character, List<Integer>> entry: map.entrySet()) {
+            List<Integer> list = entry.getValue();
+            Character current = t.charAt(list.get(0));
+            if (set.contains(current))
+                return false;           // exists previously
+            set.add(current);
+            for (int i = 1; i < list.size(); i++)
+                if (t.charAt(list.get(i)) != current)
+                    return false;
+        }
+        return true;
+    }
+
+    // 205
+    public boolean isIsomorphic1(String s, String t) {
+        char[] ch1 = s.toCharArray();
+        char[] ch2 = t.toCharArray();
+        int len = s.length();
+        for (int i = 0; i < len; i++) {
+            if(s.indexOf(ch1[i]) != t.indexOf(ch2[i])){         // so tricky!!!
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 214  暴力
+    public String shortestPalindrome(String s) {
+        StringBuilder sb = new StringBuilder(s);
+        int i = 0, length = s.length();
+        while (!isPalindrome(sb) && i < length) {
+            char c = s.charAt(length - 1 - i);
+            sb.insert(i++, c);
+        }
+        return sb.toString();
+    }
+
+    public boolean isPalindrome(StringBuilder sb) {
+        int left = 0, right = sb.length() - 1;
+        while (left < right)
+            if (sb.charAt(left++) != sb.charAt(right--))
+                return false;
+        return true;
+    }
+
+    // 216
+    public List<List<Integer>> combinationSum3(int k, int n) {
+        List<List<Integer>> res = new ArrayList<>();
+        if (k >= 10)            // 只能1~9,且不能重复
+            return res;
+        List<Integer> current = new ArrayList<>();
+        combinationSum3Helper(k, n, res, current, 0, 0, 0);
+        return res;
+    }
+
+    public void combinationSum3Helper(int k, int n, List<List<Integer>> res, List<Integer> current, int num,
+                                      int sum, int prev) {
+        if (num == k || prev == 9) {
+            if (sum == n && num == k)
+                res.add(new ArrayList(current));
+            return;
+        }
+
+        for (int i = prev + 1; i <= 9; i++) {
+            sum += i;
+            num++;
+            current.add(i);
+            combinationSum3Helper(k, n, res, current, num, sum, i);
+            current.remove(current.size() - 1);
+            num--;
+            sum -= i;
+        }
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.combinationSum3(3, 7));
+        StringBuilder sb = new StringBuilder();
+
+        System.out.println(test.isIsomorphic1("aba", "cde"));
+        String str = "abcabbcaa";
+        char[] ch1 = str.toCharArray();
+        for (int i = 0; i < str.length(); i++)
+            System.out.println(str.indexOf(ch1[i]));
+        test.rotate(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 6);
         int[] dp = IntStream.range(-1, 10).toArray();
         for (int i: dp)
             System.out.print(i + ", ");
