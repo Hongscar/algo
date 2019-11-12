@@ -7457,7 +7457,7 @@ public class Test {
         return true;
     }
 
-    // 205
+    // 205  tricky
     public boolean isIsomorphic1(String s, String t) {
         char[] ch1 = s.toCharArray();
         char[] ch2 = t.toCharArray();
@@ -7518,9 +7518,149 @@ public class Test {
         }
     }
 
+    public int oddCells(int n, int m, int[][] indices) {
+        boolean[][] odds = new boolean[n][m];
+        for (int[] indice: indices) {
+            int row = indice[0];
+            int column = indice[1];
+            for (int i = 0; i < m; i++)
+                odds[row][i] = !odds[row][i];
+            for (int i = 0; i < n; i++)
+                odds[i][column] = !odds[i][column];
+        }
+        int res = 0;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < m; j++)
+                if (odds[i][j])
+                    res++;
+        return res;
+    }
+
+    // 748
+    public String shortestCompletingWord(String licensePlate, String[] words) {
+        int[] license = new int[26];
+        licensePlate = licensePlate.toLowerCase();
+        for (char c: licensePlate.toCharArray())
+            if (Character.isLetter(c))
+                license[c - 'a']++;
+        int currentMinLength = Integer.MAX_VALUE;
+        String result = "";
+        for (int i = 0; i < words.length; i++) {
+            int[] current = new int[26];
+            String str = words[i];
+            if (str.length() >= Integer.MAX_VALUE)
+                continue;
+            String temp = words[i];
+            str = str.toLowerCase();
+            for (char c: str.toCharArray())
+                if (Character.isLetter(c))
+                    current[c - 'a']++;
+            for (int j = 0; j < 26; j++)
+                if (license[j] > current[j])
+                    break;
+                else {
+                    if (j == 25 && str.length() < currentMinLength) {
+                        result = temp;
+                        currentMinLength = str.length();
+                    }
+                }
+        }
+        return result;
+    }
+
+    // 744 顺序遍历 n   但题目实际上提到了是有序数组,所以可以二分查找的
+    public char nextGreatestLetter(char[] letters, char target) {
+//        ArrayList<Character> list = new ArrayList<>();
+//        for (char c: letters)
+//            if (c > target)
+//                list.add(c);
+//        if (list.size() == 0)
+//            for (char c: letters)
+//                list.add(c);    // insert all elements
+//        char currentMin = list.get(0);
+//        for (char c: list)
+//            currentMin = currentMin > c ? c : currentMin;
+//        return currentMin;
+        for (char c: letters)
+            if (c > target)
+                return c;
+        return letters[0];
+    }
+
+    // 744 二分, 要弄清楚二分结束时指针的位置。
+    public char nextGreatestLetter1(char[] letters, char target) {
+        int length = letters.length;
+        if (target >= letters[length - 1] || target < letters[0])
+            return letters[0];
+        int left = 0, right = length - 1;
+        while (left <= right) {
+            int mid = (left + right) / 2;
+            if (target < letters[mid])
+                right = mid - 1;
+            else
+                left = mid + 1;
+        }
+        return letters[left];  // 结束时left指向比目标字母最小的字母
+    }
+
+    // 797          TODO
+    public List<List<Integer>> allPathsSourceTarget(int[][] graph) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> current = new ArrayList<>();
+        addPathsSourceTargetHelper(graph, res, current, 0);
+        return res;
+    }
+
+    public void addPathsSourceTargetHelper(int[][] graph, List<List<Integer>> res, List<Integer> current, int n) {
+
+    }
+
+    // 1249
+    public String minRemoveToMakeValid(String s) {
+        StringBuilder sb = new StringBuilder(s);
+        int length = sb.length();
+        int left = 0;
+        for (int i = 0; i < length; i++) {
+            char c = sb.charAt(i);
+            if (c == '(')
+                left++;
+            else if (c == ')') {
+                if (left == 0) {
+                    sb.deleteCharAt(i);
+                    length--;
+                    i--;            // stay at the current position
+                    continue;
+                }
+                left--;
+            }
+        }
+        int right = 0;
+        for (int i = length - 1; i >= 0; i--) {
+            char c = sb.charAt(i);
+            if (c == ')')
+                right++;
+            else if (c == '(') {
+                if (right == 0) {
+                    sb.deleteCharAt(i);
+                    continue;
+                }
+                right--;
+            }
+        }
+        return sb.toString();
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.minRemoveToMakeValid("))(("));
+        StringBuilder sb1 = new StringBuilder("safqweffdbfd");
+        sb1.deleteCharAt(3);
+        String temp = "1s3 456";
+        System.out.println(test.shortestCompletingWord(temp, new String[] {"looks", "pest", "stew", "show"}));
+        temp = temp.toLowerCase();
+        System.out.println(temp);
+        System.out.println(test.oddCells(2, 3, new int[][] {{0, 1}, {1, 1}}));
         System.out.println(test.combinationSum3(3, 7));
         StringBuilder sb = new StringBuilder();
 
