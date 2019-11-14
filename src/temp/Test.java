@@ -7603,18 +7603,6 @@ public class Test {
         return letters[left];  // 结束时left指向比目标字母最小的字母
     }
 
-    // 797          TODO
-    public List<List<Integer>> allPathsSourceTarget(int[][] graph) {
-        List<List<Integer>> res = new ArrayList<>();
-        List<Integer> current = new ArrayList<>();
-        addPathsSourceTargetHelper(graph, res, current, 0);
-        return res;
-    }
-
-    public void addPathsSourceTargetHelper(int[][] graph, List<List<Integer>> res, List<Integer> current, int n) {
-
-    }
-
     // 1249
     public String minRemoveToMakeValid(String s) {
         StringBuilder sb = new StringBuilder(s);
@@ -7650,9 +7638,188 @@ public class Test {
         return sb.toString();
     }
 
+    // 1253 贪心算法, 优先insert到 min(upper, lower)当中.
+    public List<List<Integer>> reconstructMatrix(int upper, int lower, int[] colsum) {
+        List<List<Integer>> res = new ArrayList<>();
+        int length = colsum.length;
+        int[] init = new int[length];
+        List<Integer> first = new ArrayList<>(length);
+        // init the length reduce the cost of resize
+        List<Integer> second = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            if (colsum[i] != 0 && colsum[i] != 1 && colsum[i] != 2)
+                return res;   // unvaild result, then return the empty list
+            else if (colsum[i] == 0) {
+                first.add(0);
+                second.add(0);
+            }
+            else if (colsum[i] == 2) {
+                first.add(1);
+                second.add(1);
+                upper--;
+                lower--;
+            }
+            else {
+                if (upper > lower) {
+                    upper--;
+                    first.add(1);
+                    second.add(0);
+                }
+                else if (upper == 0 && lower == 0)
+                    return res;     // empty
+                else {
+                    lower--;
+                    second.add(1);
+                    first.add(0);
+                }
+            }
+        }
+        if (upper != 0 || lower != 0)
+            return res;             // empty still.
+        res.add(first);
+        res.add(second);
+        return res;
+    }
+
+    // 1254     DFS, 首先把边界的0以及与其相邻的0全部置换为1(因为题意认为边界的0不符合要求)
+    public int closedIsland(int[][] grid) {
+        int m = grid.length;
+        int n = grid[0].length;
+        int res = 0;
+
+        for (int j = 0; j < n; j++) {
+            if (grid[0][j] == 0)
+                dfsInit(grid, 0, j);    // init the border.
+            if (grid[m - 1][j] == 0)
+                dfsInit(grid, m - 1, j);
+        }
+
+        for (int i = 0; i < m; i++) {
+            if (grid[i][0] == 0)
+                dfsInit(grid, i, 0);    // init the border.
+            if (grid[i][n - 1] == 0)
+                dfsInit(grid, i, n - 1);
+        }
+
+        for (int i = 1; i < m - 1; i++) {
+            for (int j = 1; j < n - 1; j++) {
+                if (grid[i][j] == 0) {
+                    res++;
+                    dfs(grid, i, j);
+                }
+            }
+        }
+        return res;
+    }
+
+    public void dfsInit(int[][] grid, int i, int j) {
+        if (i < 0 || j < 0 || i >= grid.length || j >= grid[0].length || grid[i][j] == 1)
+            return;
+        grid[i][j] = 1;
+        dfsInit(grid, i, j + 1);
+        dfsInit(grid, i, j - 1);
+        dfsInit(grid, i + 1, j);
+        dfsInit(grid, i - 1, j);
+    }
+
+    public void dfs(int[][] grid, int i, int j) {
+        if (i == 0 || j == 0 || i >= grid.length || j >= grid[0].length || grid[i][j] == 1)
+            return;
+        grid[i][j] = 1;
+        dfs(grid, i, j + 1);
+        dfs(grid, i, j - 1);
+        dfs(grid, i + 1, j);
+        dfs(grid, i - 1, j);
+    }
+
+    // 223
+    public int computeArea(int A, int B, int C, int D, int E, int F, int G, int H) {
+        int a, b;
+        int area1 = (D - B) * (C - A);
+        int area2 = (H - F) * (G - E);
+        if ((A >= E && C <= G && B >= F && D <= H) || (E >= A && C >= G && F >= B && D >= H))   // 其中一个完全在另一个之中
+            return Math.max(area1, area2);
+        if ((C <= E || G <= A || B >= H || F >= D))
+            return area1 + area2;                   // 两个完全不相交
+        b = Math.min(D, H) - Math.max(B, F);
+        a = Math.min(C, G) - Math.max(A, E);
+        return area1 + area2 - a * b;
+    }
+
+    // 406
+    public int[][] reconstructQueue(int[][] people) {
+        int length = people.length;
+        if (length == 0 || people[0].length == 0)
+            return new int[0][0];
+        int[][] res = new int[length][people[0].length];
+        int[][] copies = new int[length][people[0].length];
+        for (int i = 0; i < length; i++)
+            for (int j = 0; j < people[0].length; j++)
+                copies[i][j] = people[i][j];
+        int finish = 0;
+        List<Integer> candidates = new ArrayList<>(length);
+        List<Integer> indexs = new ArrayList<>(length);
+        while (finish < length) {
+            for (int i = 0; i < length; i++)
+                if (people[i][1] == 0) {
+                    candidates.add(people[i][0]);
+                    indexs.add(i);
+                }
+            int min = Integer.MAX_VALUE;
+            int minIndex = 0;
+            int size = candidates.size();
+            for (int i = 0; i < size; i++) {
+                int current = candidates.get(i);
+                if (current < min) {
+                    min = current;
+                    minIndex = i;
+                }
+            }
+            int tempIndex = indexs.get(minIndex);
+            res[finish][0] = copies[tempIndex][0];
+            res[finish++][1] = copies[tempIndex][1];
+            for (int i = 0; i < length; i++)
+                if (i != tempIndex && people[i][0] <= min)
+                    people[i][1]--;             // change the status
+            people[tempIndex][0] = -1;           // won't reduce any more
+            people[tempIndex][1] = 1111;
+            candidates.clear();
+            indexs.clear();
+        }
+        return res;
+    }
+
+    // 797      经典回溯
+    public List<List<Integer>> allPathsSourceTarget(int[][] graph) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> current = new ArrayList<>();
+        current.add(0);
+        if (graph[0].length == 0) {
+            res.add(new ArrayList<>(current));
+            return res;
+        }
+        allPathsSourceTargetHelper(graph, res, current, 0);
+        return res;
+    }
+
+    public void allPathsSourceTargetHelper(int[][] graph, List<List<Integer>> res, List<Integer> current, int cur) {
+        if (cur == graph.length - 1) {
+            res.add(new ArrayList<>(current));
+            return;
+        }
+        for (int i = 0; i < graph[cur].length; i++) {
+            current.add(graph[cur][i]);
+            allPathsSourceTargetHelper(graph, res, current, graph[cur][i]);
+            current.remove(current.size() - 1);
+        }
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.reconstructQueue(new int[][] {{7, 0}, {4, 4}, {7, 1}, {5, 0}, {6, 1}, {5, 2}}));
+        System.out.println(test.computeArea(-2, -2, 2, 2, -3, -3, 3, -1));
+        System.out.println(test.closedIsland(new int[][] {{1}}));
         System.out.println(test.minRemoveToMakeValid("))(("));
         StringBuilder sb1 = new StringBuilder("safqweffdbfd");
         sb1.deleteCharAt(3);
