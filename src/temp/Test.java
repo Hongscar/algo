@@ -3155,6 +3155,7 @@ public class Test {
         return 1;
     }
 
+    // 10 TODO bad dp
     public boolean isMatch(String s, String p) {
         int m = s.length();
         int n = p.length();
@@ -7814,60 +7815,371 @@ public class Test {
         }
     }
 
+    // 134   gas[start] - cost[start] + ... + gas[length - 1] + cost[length - 1] >
+    //          gas[0] - cost[0] +... + gas[start - 1] - cost[start - 1]
+    public int canCompleteCircuit(int[] gas, int[] cost) {
+        int rest = 0, run = 0, start = 0, length = gas.length;
+        for (int i = 0; i < length; i++) {
+            run += gas[i] - cost[i];
+            rest += gas[i] - cost[i];
+            if (run < 0) {
+                start = i + 1;
+                run = 0;
+            }
+        }
+        return rest < 0 ? -1 : start;
+    }
+
+    // 229
+    public List<Integer> majorityElement2(int[] nums) {
+        List<Integer> list = new ArrayList<>();
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for (int num: nums)
+            map.put(num, map.getOrDefault(num, 0) + 1);
+        int length = nums.length;
+        int temp = (int)Math.floor(length / 3);
+        for (int num: nums)
+            if (map.get(num) > temp && !list.contains(num))
+                list.add(num);
+        return list;
+    }
+
+    // 814
+    public TreeNode pruneTree(TreeNode root) {
+        if (root == null)
+            return root;
+        if (root.left != null)
+            root.left = pruneTree(root.left);
+        if (root.right != null)
+            root.right = pruneTree(root.right);
+        if (root.left == null && root.right == null)    // a leaf node
+            if (root.val == 0)
+                root = null;
+        return root;
+    }
+
+    // 925      这道题的test case相当有问题
+    public boolean isLongPressedName(String name, String typed) {
+        int left = 0, right = 0, length1 = name.length(), length2 = typed.length();
+        boolean reset = false;
+        char former = 'A';
+        //char firstChar = name.charAt(left);
+        while (left < length1 && right < length2) {
+            char c = name.charAt(left);
+            if (former == 'A' || reset)
+                former = c;
+            reset = false;
+            boolean flag = false;
+            for (int i = right; i <length2; i++) {
+                if (typed.charAt(i) == c) {     // typed find char c, then right go on.
+                    flag = true;
+                    right = i + 1;
+                    former = c;
+                    break;
+                }
+                if (typed.charAt(i) != former && typed.charAt(i) != c) {
+                    // if typed diff from c or former, some other characters appear, so set left to zero
+                    left = 0;
+                    right = i + 1;
+                    reset = true;
+                    break;
+                }
+                if (i == length2 - 1)
+                    return false;       // match the end point
+            }
+            if (flag)
+                left++;
+        }
+        if (left == length1)
+            return true;
+        return false;
+    }
+
+    // 495
+    public int findPoisonedDuration(int[] timeSeries, int duration) {
+        int res = 0;
+        int length = timeSeries.length;
+        if (length == 0)
+            return res;
+        for (int i = 0; i < length - 1; i++) {
+            if (timeSeries[i] + duration <= timeSeries[i + 1])
+                res += duration;
+            else
+                res += timeSeries[i + 1] - timeSeries[i];
+        }
+        res += duration;        // the final
+        return res;
+    }
+
+    // 509
+    public int fib(int N) {
+        if (N <= 1)
+            return N;
+        int[] fibs = new int[N + 1];
+        fibs[0] = 0;
+        fibs[1] = 1;
+        for (int i = 2; i <= N; i++)
+            fibs[i] = fibs[i - 1] + fibs[i - 2];
+        return fibs[N];
+    }
+
+    public boolean judgeSquareSum(int c) {
+        List<Integer> list = new ArrayList<>();
+        int temp = (int)Math.floor(Math.sqrt(c));
+        for (int i = 0; i <= temp; i++)
+            list.add(i * i);
+        for (int i = 0; i < list.size(); i++)
+            if (list.contains(c - list.get(i)))
+                return true;
+        return false;
+    }
+
+    // 985
+    public int[] sumEvenAfterQueries(int[] A, int[][] queries) {
+        int length = queries.length;
+        int[] res = new int[length];
+        int evenSum = 0;
+        for (int a: A)
+            if (a % 2 == 0)
+                evenSum += a;
+        for (int i = 0; i < length; i++) {
+            int former = A[queries[i][1]];
+            A[queries[i][1]] += queries[i][0];
+            if (former % 2 != 0 && A[queries[i][1]] % 2 != 0);  // doNothing
+                //res[i] = evenSum;
+            else if (former % 2 != 0 && A[queries[i][1]] % 2 == 0)
+                evenSum += A[queries[i][1]];
+            else if (former % 2 == 0 && A[queries[i][1]] % 2 != 0)
+                evenSum -= former;
+            else    // former % 2 == 0 && A[queries[i][1]] % 2 == 0
+                evenSum += queries[i][0];
+            res[i] = evenSum;
+        }
+        return res;
+    }
+
+    // 830
+    public List<List<Integer>> largeGroupPositions(String S) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> current = new ArrayList<>();
+        int length = S.length();
+        int left = -1, right = -1;
+        for (int i = 0; i < length - 2;) {
+            char c1 = S.charAt(i);
+            char c2 = S.charAt(i + 1);
+            if (left >= 0) {
+                char former = S.charAt(right);
+                for (int k = right + 1; k < length; k++)
+                    if (S.charAt(k) == former)
+                        right++;
+                    else
+                        break;
+                current.add(left);
+                current.add(right);
+                res.add(new ArrayList<>(current));
+                current.clear();
+                i = right + 1;
+                left = -1;
+                right = -1;
+                continue;
+            }
+            char c3 = S.charAt(i + 2);
+            if (c1 == c2 && c1 == c3) {
+                left = i;
+                right = i + 2;
+            }
+            else {
+                left = -1;
+                right = -1;
+                i++;
+            }
+        }
+        return res;
+    }
+
+    // 1260
+    public List<List<Integer>> shiftGrid(int[][] grid, int k) {
+        int n = grid.length;
+        int m = grid[0].length;
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> current = new ArrayList<>();
+        int mount = n * m;
+        k %= (n * m);
+        int[] temp = new int[mount];
+        int index = 0;
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < m; j++)
+                temp[index++] = grid[i][j];
+        int first = n * m - k;
+        for (int i = 0; i < mount; i++) {
+            current.add(temp[first % mount]);
+            first++;
+            if (current.size() == m) {
+                res.add(new ArrayList<>(current));
+                current.clear();
+            }
+        }
+        return res;
+    }
+
+    // 1261 暴力递归, 速度很慢, 752ms
+    class FindElements {
+        public TreeNode root;
+
+        public FindElements(TreeNode root) {
+            root.val = 0;
+            initHelper(root);
+            this.root = root;
+        }
+
+        public void initHelper(TreeNode root) {
+            if (root == null)
+                return;
+            if (root.left != null)
+                root.left.val = root.val * 2 + 1;
+            if (root.right != null)
+                root.right.val = root.val * 2 + 2;
+            initHelper(root.left);
+            initHelper(root.right);
+        }
+
+        public boolean find(int target) {
+            return findHelper(root, target);
+        }
+
+        public boolean findHelper(TreeNode root, int target) {
+            if (root == null)
+                return false;
+            if (root.val == target)
+                return true;
+            return findHelper(root.left, target) || findHelper(root.right, target);
+        }
+    }
+
+    // 1261 给类添加一个HashSet成员变量, 使得find直接到Set中查找是否contains即可, 30ms
+    class FindElements1 {
+        public TreeNode root;
+        public HashSet<Integer> set;
+
+        public FindElements1(TreeNode root) {
+            set = new HashSet<>();
+            set.add(0);
+            root.val = 0;
+            initHelper(root);
+            this.root = root;
+        }
+
+        public void initHelper(TreeNode root) {
+            if (root == null)
+                return;
+            if (root.left != null) {
+                root.left.val = root.val * 2 + 1;
+                set.add(root.left.val);
+            }
+            if (root.right != null) {
+                root.right.val = root.val * 2 + 2;
+                set.add(root.right.val);
+            }
+            initHelper(root.left);
+            initHelper(root.right);
+        }
+
+        public boolean find(int target) {
+            return set.contains(target);
+        }
+    }
+
+    // 1262
+    public int maxSumDivThree(int[] nums) {
+        int[] dps = {0, 0, 0};      // 记录前i个nums中,mod 3为0/1/2的最大和
+        int[] temp = new int[3];    // 在循环里遍历一次之后,再赋值回给dps
+        int sum = 0;
+        for (int num: nums) {
+            for (int dp: dps) {
+                int current = num + dp;
+                if (current % 3 == 0)
+                    temp[0] = temp[0] > current ? temp[0] : current;
+                else if (current % 3 == 1)
+                    temp[1] = temp[1] > current ? temp[1] : current;
+                else
+                    temp[2] = temp[2] > current ? temp[2] : current;
+            }
+            dps[0] = temp[0];
+            dps[1] = temp[1];
+            dps[2] = temp[2];
+        }
+        return dps[0];
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
-        System.out.println(test.reconstructQueue(new int[][] {{7, 0}, {4, 4}, {7, 1}, {5, 0}, {6, 1}, {5, 2}}));
-        System.out.println(test.computeArea(-2, -2, 2, 2, -3, -3, 3, -1));
-        System.out.println(test.closedIsland(new int[][] {{1}}));
-        System.out.println(test.minRemoveToMakeValid("))(("));
-        StringBuilder sb1 = new StringBuilder("safqweffdbfd");
-        sb1.deleteCharAt(3);
-        String temp = "1s3 456";
-        System.out.println(test.shortestCompletingWord(temp, new String[] {"looks", "pest", "stew", "show"}));
-        temp = temp.toLowerCase();
-        System.out.println(temp);
-        System.out.println(test.oddCells(2, 3, new int[][] {{0, 1}, {1, 1}}));
-        System.out.println(test.combinationSum3(3, 7));
-        StringBuilder sb = new StringBuilder();
-
-        System.out.println(test.isIsomorphic1("aba", "cde"));
-        String str = "abcabbcaa";
-        char[] ch1 = str.toCharArray();
-        for (int i = 0; i < str.length(); i++)
-            System.out.println(str.indexOf(ch1[i]));
-        test.rotate(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 6);
-        int[] dp = IntStream.range(-1, 10).toArray();
-        for (int i: dp)
-            System.out.print(i + ", ");
-        System.out.println(test.partition3("aab"));
-        System.out.println(test.findOrder(4, new int[][] {{1,0}, {2,0}, {3,1}, {3,2}}));
-        int[] tem =
-                new int[] {6,6,6,6,6,6,6};
-        Arrays.sort(tem);
-        for (int i = 0; i < tem.length; i++)
-            System.out.print(tem[i] + ", ");
-        System.out.println();
-        System.out.println(test.hIndex(tem));
-
-        System.out.println(true || false && false || false);  // ==> t || f || f = t
-        System.out.println((true || false) && (false || false));    // ==> t && f = f
-        //int[][] res = test.gameOfLife(new int[][] {{0,1,0},{0,0,1},{1,1,1},{0,0,0}});
-        System.out.println(Integer.MAX_VALUE);
-        System.out.println(Long.MAX_VALUE);
-        System.out.println(test.isAdditiveNumber("0235813"));
-        System.out.println(test.removeDuplicateLetters("bcabc"));
-//        System.out.println(test.preimageSizeFZF1(153));
-//        System.out.println(test.numberOfSubarrays(new int[] {1, 1, 2, 1, 1}, 3));
-//        System.out.println(test.minimumSwap("xx", "yy"));
-//        System.out.println(test.transformArray(new int[] {1, 6, 3, 4, 3, 5}));
-        int MOD = 1_000_000_007;
-        System.out.println(MOD);
-        char[][] board = {{'5','3','.','.','7','.','.','.','.'},{'6','.','.','1','9','5','.','.','.'},
-                {'.','9','8','.','.','.','.','6','.'},{'8','.','.','.','6','.','.','.','3'},
-                {'4','.','.','8','.','3','.','.','1'},{'7','.','.','.','2','.','.','.','6'},
-                {'.','6','.','.','.','.','2','8','.'},{'.','.','.','4','1','9','.','.','5'},
-                {'.','.','.','.','8','.','.','7','9'}};
+        System.out.println(test.maxSumDivThree(new int[] {3, 6, 5, 1, 8}));
+        int[] asd1 = {2,5,87};
+        int []asd2 = {5,7,9};
+        asd2 = asd1;
+        for (int i11: asd2)
+            System.out.print(i11 + ", ");
+        char c = '*';
+        System.out.println((int)c);
+        System.out.println(test.largeGroupPositions("abcdddeeeeaabbbcd"));
+//        System.out.println(test.sumEvenAfterQueries(new int[] {1, 2, 3, 4}, new int[][] {
+//                {1, 0}, {-3, 1}, {-4, 0}, {2, 3}
+//        }));
+//        System.out.println(test.judgeSquareSum(Integer.MAX_VALUE));
+//        System.out.println(test.isLongPressedName("kikcxmvzi", "kiikcxxmmvvzz"));
+//        System.out.println(test.canCompleteCircuit(new int[] {3, 3, 4}, new int[] {3, 4, 4}));
+//        System.out.println(test.reconstructQueue(new int[][] {{7, 0}, {4, 4}, {7, 1}, {5, 0}, {6, 1}, {5, 2}}));
+//        System.out.println(test.computeArea(-2, -2, 2, 2, -3, -3, 3, -1));
+//        System.out.println(test.closedIsland(new int[][] {{1}}));
+//        System.out.println(test.minRemoveToMakeValid("))(("));
+//        StringBuilder sb1 = new StringBuilder("safqweffdbfd");
+//        sb1.deleteCharAt(3);
+//        String temp = "1s3 456";
+//        System.out.println(test.shortestCompletingWord(temp, new String[] {"looks", "pest", "stew", "show"}));
+//        temp = temp.toLowerCase();
+//        System.out.println(temp);
+//        System.out.println(test.oddCells(2, 3, new int[][] {{0, 1}, {1, 1}}));
+//        System.out.println(test.combinationSum3(3, 7));
+//        StringBuilder sb = new StringBuilder();
+//
+//        System.out.println(test.isIsomorphic1("aba", "cde"));
+//        String str = "abcabbcaa";
+//        char[] ch1 = str.toCharArray();
+//        for (int i = 0; i < str.length(); i++)
+//            System.out.println(str.indexOf(ch1[i]));
+//        test.rotate(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 6);
+//        int[] dp = IntStream.range(-1, 10).toArray();
+//        for (int i: dp)
+//            System.out.print(i + ", ");
+//        System.out.println(test.partition3("aab"));
+//        System.out.println(test.findOrder(4, new int[][] {{1,0}, {2,0}, {3,1}, {3,2}}));
+//        int[] tem =
+//                new int[] {6,6,6,6,6,6,6};
+//        Arrays.sort(tem);
+//        for (int i = 0; i < tem.length; i++)
+//            System.out.print(tem[i] + ", ");
+//        System.out.println();
+//        System.out.println(test.hIndex(tem));
+//
+//        System.out.println(true || false && false || false);  // ==> t || f || f = t
+//        System.out.println((true || false) && (false || false));    // ==> t && f = f
+//        //int[][] res = test.gameOfLife(new int[][] {{0,1,0},{0,0,1},{1,1,1},{0,0,0}});
+//        System.out.println(Integer.MAX_VALUE);
+//        System.out.println(Long.MAX_VALUE);
+//        System.out.println(test.isAdditiveNumber("0235813"));
+//        System.out.println(test.removeDuplicateLetters("bcabc"));
+////        System.out.println(test.preimageSizeFZF1(153));
+////        System.out.println(test.numberOfSubarrays(new int[] {1, 1, 2, 1, 1}, 3));
+////        System.out.println(test.minimumSwap("xx", "yy"));
+////        System.out.println(test.transformArray(new int[] {1, 6, 3, 4, 3, 5}));
+//        int MOD = 1_000_000_007;
+//        System.out.println(MOD);
+//        char[][] board = {{'5','3','.','.','7','.','.','.','.'},{'6','.','.','1','9','5','.','.','.'},
+//                {'.','9','8','.','.','.','.','6','.'},{'8','.','.','.','6','.','.','.','3'},
+//                {'4','.','.','8','.','3','.','.','1'},{'7','.','.','.','2','.','.','.','6'},
+//                {'.','6','.','.','.','.','2','8','.'},{'.','.','.','4','1','9','.','.','5'},
+//                {'.','.','.','.','8','.','.','7','9'}};
         //test.solveSudoku(board);
 //        System.out.println(6 / 3 * 3);
 //        System.out.println(test.findMin(new int[] {}));
