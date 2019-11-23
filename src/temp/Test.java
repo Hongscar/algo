@@ -8111,9 +8111,83 @@ public class Test {
         return dps[0];
     }
 
+    // 242
+    public boolean isAnagram(String s, String t) {
+        int[] s1 = new int[26];
+        int[] s2 = new int[26];
+        for (char c: s.toCharArray())
+            s1[c - 'a']++;
+        for (char c: t.toCharArray())
+            s2[c - 'a']++;
+        for (int i = 0; i < 26; i++)
+            if (s1[i] != s2[i])
+                return false;
+        return true;
+    }
+
+    // 722      麻烦, 还要加空格? 毫无必要的题   (需要正则)
+    public List<String> removeComments(String[] source) {
+        List<String> res = new ArrayList<>();
+        boolean flag = false;
+        for (String src: source) {
+            src = src.trim();
+            int length = src.length();
+            if (length == 0)
+                continue;
+            if (!flag) {
+                if (length < 2)
+                    res.add(src);
+                else if (src.charAt(0) == '/' && src.charAt(1) == '/')
+                    continue;
+                else if (src.charAt(0) == '/' && src.charAt(1) == '*') {
+                    if (length > 4 && src.charAt(length - 1) == '/' && src.charAt(length - 2) == '*')
+                        continue;
+                    flag = true;
+                    continue;
+                }
+                else
+                    res.add(src);
+            }
+            else {
+                if (length > 2 && src.charAt(length - 1) == '/' && src.charAt(length - 2) == '*')
+                    flag = false;
+            }
+        }
+        return res;
+    }
+
+    // 938
+    public int rangeSumBST(TreeNode root, int L, int R) {
+        if (root == null)
+            return 0;
+        else if (root.val < L)
+            return rangeSumBST(root.right, L, R);
+        else if (root.val > R)
+            return rangeSumBST(root.left, L, R);
+        else
+            return root.val + rangeSumBST(root.left, L, R) + rangeSumBST(root.right, L, R);
+    }
+
+    // 1005
+    public int largestSumAfterKNegations(int[] A, int K) {
+        Arrays.sort(A);
+        for (int i = 0; i < K; i++) {
+            A[0] = -A[0];
+            Arrays.sort(A);
+        }
+        int sum = 0;
+        for (int a: A)
+            sum += a;
+        return sum;
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        String[] strings = {"/*Test program */", "int main()", "{ ",
+                "  // variable declaration ", "int a, b, c;", "/* This is a test",
+                "   multiline  ", "   comment for ", "   testing */", "a = b + c;", "}"};
+        System.out.println(test.removeComments(strings));
         System.out.println(test.maxSumDivThree(new int[] {3, 6, 5, 1, 8}));
         int[] asd1 = {2,5,87};
         int []asd2 = {5,7,9};
