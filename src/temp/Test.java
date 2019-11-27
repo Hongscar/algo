@@ -8181,9 +8181,59 @@ public class Test {
         return sum;
     }
 
+    // 795
+    public int numSubarrayBoundedMax(int[] A, int L, int R) {
+        // 最大元素大于等于L,小于等于R. 相当于: 最大元素大于等于R - 最大元素小于等于L - 1
+        return numSubarrayBoundedMaxHelper(A, R) - numSubarrayBoundedMaxHelper(A, L - 1);
+    }
+
+    public int numSubarrayBoundedMaxHelper(int[] A, int max) {
+        int res = 0;
+        int numSubArray = 0;
+        for (int num: A) {
+            if (num <= max) {
+                numSubArray++;
+                res += numSubArray;
+            }
+            else
+                numSubArray = 0;
+        }
+        return res;
+    }
+
+    // 392
+    public boolean isSubsequence(String s, String t) {
+        int prev = 0;
+        for (char c: s.toCharArray()) {
+            int index = t.indexOf(c, prev);
+            if (index == -1)
+                return false;
+            prev = index + 1;
+        }
+        return true;
+    }
+
+    // 792 最暴力的方法,直接循环调用P392,但效率肯定会很低
+    public int numMatchingSubseq(String S, String[] words) {
+        int res = 0;
+        for (String word: words)
+            if (isSubsequence(word, S))
+                res++;
+        return res;
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        List<Integer> indexs[] = new ArrayList[3];
+        List<List<Integer>> index1 = new ArrayList<>();
+        indexs[0] = new ArrayList<>();
+        indexs[1] = new ArrayList<>();
+        for (List<Integer> index: indexs)
+            System.out.println(index);      // [], [], null
+        index1.add(new ArrayList<>());
+        index1.add(new ArrayList<>());
+        System.out.println(index1);         // [[], []]
         String[] strings = {"/*Test program */", "int main()", "{ ",
                 "  // variable declaration ", "int a, b, c;", "/* This is a test",
                 "   multiline  ", "   comment for ", "   testing */", "a = b + c;", "}"};
