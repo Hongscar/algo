@@ -8222,9 +8222,153 @@ public class Test {
         return res;
     }
 
+    // 1154
+    public int dayOfYear(String date) {
+        int[] days = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30};
+        String[] dates = date.split("-");
+        int year = Integer.valueOf(dates[0]);
+        int month = Integer.valueOf(dates[1]);
+        int day = Integer.valueOf(dates[2]);
+        if (dayOfYearHelper(year))
+            days[1]++;
+        int res = 0;
+        for (int i = 0; i < month - 1; i++)
+            res += days[i];
+        res += day;
+        return res;
+    }
+
+    public boolean dayOfYearHelper(int year) {
+        if (year % 100 != 0 && year % 4 == 0)
+            return true;
+        if (year % 100 == 0 && year % 400 == 0)
+            return true;
+        return false;
+    }
+
+    public String toHexspeak(String num) {
+        Long l = Long.valueOf(num);
+        String hex = Long.toHexString(l).toUpperCase();
+        Character[] temp = {'2', '3', '4', '5', '6', '7', '8', '9'};
+        List<Character> list = new ArrayList<>(Arrays.asList(temp));
+        StringBuilder sb = new StringBuilder();
+        for (char c: hex.toCharArray())
+            if (list.contains(c))
+                return "ERROR";
+            else {
+                if (c == '1')
+                    c = 'I';
+                if (c == '0')
+                    c = 'O';
+                sb.append(c);
+            }
+        return sb.toString();
+    }
+
+    public List<List<Integer>> removeInterval(int[][] intervals, int[] toBeRemoved) {
+        List<List<Integer>> res = new ArrayList<>();
+        int left = 0, length = intervals.length;
+
+        for (int i = 0; i < length; i++) {
+            List<Integer> current = new ArrayList<>();
+            if (intervals[i][1] <= toBeRemoved[0] || intervals[i][0] >= toBeRemoved[1]) {
+                current.add(intervals[i][0]);
+                current.add(intervals[i][1]);
+                res.add(new ArrayList<>(current));
+                continue;
+            }
+            else if (intervals[i][0] >= toBeRemoved[0] && intervals[i][1] <= toBeRemoved[1])
+                continue;
+            else if (intervals[i][0] < toBeRemoved[0] && intervals[i][1] < toBeRemoved[1]) {
+                current.add(intervals[i][0]);
+                current.add(toBeRemoved[0]);
+                res.add(new ArrayList<>(current));
+                continue;
+            }
+            else if (intervals[i][0] < toBeRemoved[0] && intervals[i][1] > toBeRemoved[1]) {
+                current.add(intervals[i][0]);
+                current.add(toBeRemoved[0]);
+                res.add(new ArrayList<>(current));
+                current.clear();
+                current.add(toBeRemoved[1]);
+                current.add(intervals[i][1]);
+                res.add(new ArrayList<>(current));
+                continue;
+            }
+            else if (intervals[i][0] < toBeRemoved[1] && intervals[i][1] > toBeRemoved[1]) {
+                current.add(toBeRemoved[1]);
+                current.add(intervals[i][1]);
+                res.add(new ArrayList<>(current));
+                continue;
+            }
+        }
+        return res;
+    }
+
+    // 1275     其实枚举也就8种情况.
+    public String tictactoe(int[][] moves) {
+        int[][] temp = new int[3][3];
+        int length = moves.length;
+        int[] ac = {7, 56, 448, 73, 146, 292, 273, 84};     // 二进制AC结果
+        int a = 0, b = 0;
+        boolean flag = true;
+        for (int[] move: moves) {
+            if (flag)
+                a += Math.pow(2, move[0] * 3 + move[1]);
+            else
+                b += Math.pow(2, move[0] * 3 + move[1]);
+            flag = !flag;
+        }
+        for (int c: ac) {
+            if ((a & c) == c)       // 必须用异或, 不能用等于. 比如A走了4格,只有3格是最终有效的,此时不等于
+                return "A";
+            if ((b & c) == c)
+                return "B";
+        }
+        return length == 9 ? "Draw" : "Pending";
+    }
+
+    // 1276
+    public List<Integer> numOfBurgers(int tomatoSlices, int cheeseSlices) {
+        List<Integer> res = new ArrayList<>();
+        if (tomatoSlices % 2 != 0 || (tomatoSlices - 2 * cheeseSlices) < 0 || (tomatoSlices - 4 * cheeseSlices > 0))
+            return res;
+        int a = (tomatoSlices - 2 * cheeseSlices) / 2;
+        int b = cheeseSlices - a;
+        res.add(a);
+        res.add(b);
+        return res;
+    }
+
+    // 1277, 找到当前位置所能构成的最大正方形的长度 dp[i][j] = min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1
+    public int countSquares(int[][] matrix) {
+        int res = 0;
+        int m = matrix.length;
+        if (m == 0)
+            return 0;
+        int n = matrix[0].length;
+        int[][] dp = new int[m + 1][n + 1];
+        int min = Math.min(m, n);
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (matrix[i -1][j - 1] == 1)
+                    dp[i][j] = Math.min(dp[i - 1][j - 1], Math.min(dp[i - 1][j], dp[i][j - 1])) + 1;
+            }
+        }
+        for (int i = 1; i <= m; i++)
+            for (int j = 1; j <= n; j++)
+                res += dp[i][j];
+
+        return res;
+    }
+
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.tictactoe(new int[][] {{1,2},{2,1},{1,0},{0,0},{0,1},{2,0},{1,1}}));
+        System.out.println(test.removeInterval(new int[][] {{-5, -4}, {-3, -2}, {1, 2}, {3, 5}, {8, 9}},
+                new int[] {-1, 4}));
         List<Integer> indexs[] = new ArrayList[3];
         List<List<Integer>> index1 = new ArrayList<>();
         indexs[0] = new ArrayList<>();
