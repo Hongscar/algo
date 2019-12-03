@@ -8362,10 +8362,165 @@ public class Test {
         return res;
     }
 
+    // 1266
+    public int minTimeToVisitAllPoints(int[][] points) {
+        int length = points.length;
+        if (length == 1)
+            return 0;
+        int prevX = points[0][0];
+        int prevY = points[0][1];
+        int res = 0;
+        for (int i = 1; i < length; i++) {
+            int currentX = points[i][0];
+            int currentY = points[i][1];
+            int diffX = Math.abs(currentX - prevX);
+            int diffY = Math.abs(currentY - prevY);
+            int max = Math.max(diffX, diffY);
+            res += max;
+            prevX = currentX;
+            prevY = currentY;
+        }
+        return res;
+    }
+
+    // 1267     24ms, so slow.
+    public int countServers(int[][] grid) {
+        int m = grid.length;
+        int n = grid[0].length;
+        int[][] temp = new int[m][n];
+        int res = 0;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (grid[i][j] == 1) {
+                    for (int j1 = 0; j1 < n; j1++) {
+                        if (j1 == j)
+                            continue;
+                        temp[i][j1] = 1;
+                    }
+                    for (int i1 = 0; i1 < m; i1++) {
+                        if (i1 == i)
+                            continue;
+                        temp[i1][j] = 1;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (grid[i][j] == 1 && temp[i][j] == 1)
+                    res++;
+            }
+        }
+        return res;
+    }
+
+    // 1267  4ms, 无须一个temp数组, 上面的复杂度是 m^2 * n^2 ,这里的复杂度是 2 * m * n
+    public int countServers1(int[][] grid) {
+        int m = grid.length;
+        int n = grid[0].length;
+        int count = 0;
+        int[] row = new int[m];
+        int[] column = new int[n];
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (grid[i][j] == 1) {
+                    count++;
+                    row[i]++;
+                    column[j]++;
+                }
+            }
+        }
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (grid[i][j] == 1 && row[i] == 1&& column[j] == 1)
+                    count--;
+            }
+        }
+        return count;
+    }
+
+    // 1268
+    public List<List<String>> suggestedProducts(String[] products, String searchWord) {
+        List<List<String>> res = new ArrayList<>();
+        List<String> current = new ArrayList<>();
+        List<String> list = new ArrayList<>();
+        char first = searchWord.charAt(0);
+        for (String product: products) {
+            if (product.charAt(0) == first)
+                list.add(product);
+        }
+        Collections.sort(list);
+        for (int i = 0; i < list.size(); i++) {
+            if (current.size() == 3)
+                break;
+            current.add(list.get(i));           // 不能直接get0,1,2,因为list可能长度不足3
+        }
+        res.add(new ArrayList<>(current));
+        current.clear();
+        int length = searchWord.length();
+        for (int i = 1; i < length; i++) {
+            char c = searchWord.charAt(i);
+            int size = list.size();
+            for (int k = 0; k < size; k++) {
+                String tmp = list.get(k);
+                if (tmp.length() <= i || tmp.charAt(i) != c) {  // 要判断长度,否则可能刚好是最后一个字符就超出边界
+                    list.remove(k);
+                    size--;
+                    k--;
+                }
+            }
+            for (int j = 0; j < size; j++) {
+                if (current.size() == 3)
+                    break;
+                current.add(list.get(j));
+            }
+            res.add(new ArrayList<>(current));
+            current.clear();
+        }
+        return res;
+    }
+
+    // 1269
+    // Notice that the computational complexity does not depend of "arrlen".
+    // 准确的说, 是当arrLen过大的时候, 后面的一长串都没有意义的。
+    // 最简单的就是arrLen超出steps,后面都是废设。还能继续优化便是 steps / 2, 因为去到尽头也回不去原点了.
+    public int numWays(int steps, int arrLen) {
+        arrLen = arrLen > steps + 1 ? steps + 1 : arrLen;   // arrLen如果比steps大, 那么后面的其实都是废设
+        int[][] dp = new int[arrLen + 2][steps + 1];
+        int MOD = (int)Math.pow(10, 9) + 7;
+
+        for (int j = 1; j <= steps; j++) {
+            for (int i = 1; i <= arrLen; i++) {
+                if (j == 1 && (i == 1 || i == 2))
+                    dp[i][j] = 1;
+                else {
+                    long temp = (long)dp[i][j - 1] + dp[i - 1][j - 1] + dp[i + 1][j - 1];
+                    // 原地不动 + 左移 + 右移  (不用担心超出边界, 因为超出边界就是0, dp数组特地调大也是因为如此)
+                    temp %= MOD;
+                    dp[i][j] = (int)temp;
+                }
+            }
+        }
+        return dp[1][steps];
+    }
+
+    // 1237
+//    public List<List<Integer>> findSolution(CustomFunction customfunction, int z) {
+//        List<List<Integer>> res = new ArrayList<>();
+//        for (int x = 1; x <= z; x++)
+//            for (int y = 1; y <= z; y++)
+//                if (customfunction.f(x, y) == z)
+//                    res.add(new ArrayList<>(Arrays.asList(x, y)));
+//        return res;
+//    }
 
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.numWays(430, 148488));
+        ArrayList<Integer> list22 = new ArrayList<>(Arrays.asList(4, 6, 8, 2, 7));
+        for (Integer integer: list22)
+            System.out.println(integer);
         System.out.println(test.tictactoe(new int[][] {{1,2},{2,1},{1,0},{0,0},{0,1},{2,0},{1,1}}));
         System.out.println(test.removeInterval(new int[][] {{-5, -4}, {-3, -2}, {1, 2}, {3, 5}, {8, 9}},
                 new int[] {-1, 4}));
