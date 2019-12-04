@@ -8504,6 +8504,30 @@ public class Test {
         return dp[1][steps];
     }
 
+    // 1109 暴力
+    public int[] corpFlightBookings(int[][] bookings, int n) {
+        int[] res = new int[n];
+        for (int[] booking: bookings)
+            for (int i = booking[0]; i <= booking[1]; i++)
+                res[i - 1] += booking[2];
+        return res;
+    }
+
+    // 1109 优化了一个先减再加, 速度快了几百倍
+    public int[] corpFlightBookings1(int[][] bookings, int n) {
+        int count[] = new int[n];
+        for(int booking[]: bookings) {
+            count[booking[0] - 1] += booking[2];    // 只给起始位置 增加
+            if(booking[1] < n)                      // 其实就是booking[1] == n - 1
+                count[booking[1]] -= booking[2];      // 给结束位置的下一个位置先减
+        }
+
+        for(int i = 1; i < n; i++) {          // 往前叠加, 那么booking[0] ~ booking[1]中间没有加的都会加回去
+            count[i] += count[i - 1];         // 而booking[1] + 1减去的也会加回去, 也就是先减再加
+        }
+        return count;
+    }
+
     // 1237
 //    public List<List<Integer>> findSolution(CustomFunction customfunction, int z) {
 //        List<List<Integer>> res = new ArrayList<>();
@@ -8514,9 +8538,144 @@ public class Test {
 //        return res;
 //    }
 
+    // 1110 后序遍历        *
+    public List<TreeNode> delNodes(TreeNode root, int[] to_delete) {
+        List<TreeNode> list = new ArrayList<>();
+        //建立set方便节点进行判断
+        HashSet set = new HashSet();
+        for (int i = 0; i < to_delete.length; i++) {
+            set.add(to_delete[i]);
+        }
+        //直接把根插入集合，因为经过后续判断后就是删除后的root
+        if (!set.contains(root.val)) {
+            list.add(root);
+        }
+        //进行后序遍历
+        dfs(root, set, list);
+        return list;
+
+    }
+
+    public void dfs(TreeNode root, HashSet set, List<TreeNode> list) {
+        if (root == null) {
+            return;
+        }
+        //后序遍历，即左右根
+        dfs(root.left, set, list);
+        dfs(root.right, set, list);
+
+        //若该节点是需要删除的节点
+        if (set.contains(root.val)) {
+            //查看左节点是否在删除set，不在的话进行插入
+            if (root.left != null && !set.contains(root.left.val)) {
+                list.add(root.left);
+            }
+            //类似，查看右节点是否在删除set，不在的话进行插入
+            if (root.right != null && !set.contains(root.right.val)) {
+                list.add(root.right);
+            }
+        }
+        //若该节点是不需要删除的节点，则判断左右节点，若需要删除直接指向null
+        if (root.left != null && set.contains(root.left.val)) {
+            root.left = null;
+        }
+        if (root.right != null && set.contains(root.right.val)) {
+            root.right = null;
+        }
+    }
+
+    // 1122 没有排序, 用HashMap记录出现在arr2的每个元素的次数, 然后先add这一部分, 再add剩余的部分
+    public int[] relativeSortArray(int[] arr1, int[] arr2) {
+        int length = arr1.length;
+        int[] res = new int[length];
+        ArrayList<Integer> rests = new ArrayList<>();
+        HashMap<Integer, Integer> map = new HashMap<>();
+        HashSet<Integer> set = new HashSet<>();
+        for (int arr: arr2)
+            set.add(arr);
+        for (int arr: arr1)
+            if (set.contains(arr))
+                map.put(arr, map.getOrDefault(arr, 0) + 1);
+            else
+                rests.add(arr);
+        Collections.sort(rests);
+        int i = 0;
+        for(int arr: arr2) {
+            int value = map.get(arr);
+            for (int k = 0; k < value; k++)
+                res[i++] = arr;
+        }
+        for (Integer rest: rests)
+            res[i++] = rest;
+        return res;
+    }
+
+    public int[] relativeSortArray1(int[] arr1, int[] arr2) {
+        int[] counts = new int[1001];           // 题目规定了数组的值范围是 0 ~ 1000
+        int[] res = new int[arr1.length];
+        int i = 0;
+        for (int arr: arr1)
+            counts[arr]++;      // 记录每一个数组元素的个数
+        for (int arr: arr2)
+            while (counts[arr]-- > 0)
+                res[i++] = arr;     // 顺序添加arr2的元素
+//        for (int arr: arr1)           // 这样剩下的并没有排序, 所以还是老实地0 ~ 1000慢慢来
+        for (int arr = 0; arr <= 1000; arr++)
+            while (counts[arr]-- > 0)
+                res[i++] = arr;     // 添加剩下的
+        return res;
+    }
+
+    // 1123 题意是指找所有最深节点的LCA,所以当一个节点的左右子树深度相同,那么结果就是该节点
+    // 如果是左子树更深, 那么结果在左子树中,递归左子树. 右子树同理。
+    public TreeNode lcaDeepestLeaves(TreeNode root) {
+        if (root == null)
+            return root;
+        int leftDepth = maxDepth1(root.left);
+        int rightDepth = maxDepth1(root.right);
+        if (leftDepth == rightDepth)
+            return root;
+        if (leftDepth > rightDepth)
+            return lcaDeepestLeaves(root.left);
+        return lcaDeepestLeaves(root.right);
+    }
+
+    // 1123 helper
+    public int maxDepth1(TreeNode root) {
+        if (root == null)
+            return 0;
+        return Math.max(maxDepth1(root.left) + 1, maxDepth1(root.right) + 1);
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        TreeNode t1 = new TreeNode(1);
+        TreeNode t2 = new TreeNode(2);
+        TreeNode t3 = new TreeNode(3);
+        TreeNode t4 = new TreeNode(4);
+        TreeNode t5 = new TreeNode(5);
+        TreeNode t6 = new TreeNode(6);
+        TreeNode t7 = new TreeNode(7);
+        TreeNode t8 = new TreeNode(8);
+        t1.left = t2;
+        t1.right = t3;
+        t2.left = t4;
+        t2.right = t5;
+        t3.left = t6;
+        t3.right = t7;
+        t6.right = t8;
+        test.delNodes(t1, new int[] {3, 5, 8});
+
+
+    }
+
+    public void someMainTestCode() {
+                /*
+        test.corpFlightBookings1(new int[][] {{1, 2, 10}, {2, 3, 20}, {2, 5, 25}},5);
+        String s123 = "abx.ca.bcs";
+        s123 = s123.replaceAll("\\.", "qqq");
+        System.out.println(s123);
         System.out.println(test.numWays(430, 148488));
         ArrayList<Integer> list22 = new ArrayList<>(Arrays.asList(4, 6, 8, 2, 7));
         for (Integer integer: list22)
@@ -8533,9 +8692,6 @@ public class Test {
         index1.add(new ArrayList<>());
         index1.add(new ArrayList<>());
         System.out.println(index1);         // [[], []]
-        String[] strings = {"/*Test program */", "int main()", "{ ",
-                "  // variable declaration ", "int a, b, c;", "/* This is a test",
-                "   multiline  ", "   comment for ", "   testing */", "a = b + c;", "}"};
         System.out.println(test.removeComments(strings));
         System.out.println(test.maxSumDivThree(new int[] {3, 6, 5, 1, 8}));
         int[] asd1 = {2,5,87};
@@ -8546,72 +8702,72 @@ public class Test {
         char c = '*';
         System.out.println((int)c);
         System.out.println(test.largeGroupPositions("abcdddeeeeaabbbcd"));
-//        System.out.println(test.sumEvenAfterQueries(new int[] {1, 2, 3, 4}, new int[][] {
-//                {1, 0}, {-3, 1}, {-4, 0}, {2, 3}
-//        }));
-//        System.out.println(test.judgeSquareSum(Integer.MAX_VALUE));
-//        System.out.println(test.isLongPressedName("kikcxmvzi", "kiikcxxmmvvzz"));
-//        System.out.println(test.canCompleteCircuit(new int[] {3, 3, 4}, new int[] {3, 4, 4}));
-//        System.out.println(test.reconstructQueue(new int[][] {{7, 0}, {4, 4}, {7, 1}, {5, 0}, {6, 1}, {5, 2}}));
-//        System.out.println(test.computeArea(-2, -2, 2, 2, -3, -3, 3, -1));
-//        System.out.println(test.closedIsland(new int[][] {{1}}));
-//        System.out.println(test.minRemoveToMakeValid("))(("));
-//        StringBuilder sb1 = new StringBuilder("safqweffdbfd");
-//        sb1.deleteCharAt(3);
-//        String temp = "1s3 456";
-//        System.out.println(test.shortestCompletingWord(temp, new String[] {"looks", "pest", "stew", "show"}));
-//        temp = temp.toLowerCase();
-//        System.out.println(temp);
-//        System.out.println(test.oddCells(2, 3, new int[][] {{0, 1}, {1, 1}}));
-//        System.out.println(test.combinationSum3(3, 7));
-//        StringBuilder sb = new StringBuilder();
-//
-//        System.out.println(test.isIsomorphic1("aba", "cde"));
-//        String str = "abcabbcaa";
-//        char[] ch1 = str.toCharArray();
-//        for (int i = 0; i < str.length(); i++)
-//            System.out.println(str.indexOf(ch1[i]));
-//        test.rotate(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 6);
-//        int[] dp = IntStream.range(-1, 10).toArray();
-//        for (int i: dp)
-//            System.out.print(i + ", ");
-//        System.out.println(test.partition3("aab"));
-//        System.out.println(test.findOrder(4, new int[][] {{1,0}, {2,0}, {3,1}, {3,2}}));
-//        int[] tem =
-//                new int[] {6,6,6,6,6,6,6};
-//        Arrays.sort(tem);
-//        for (int i = 0; i < tem.length; i++)
-//            System.out.print(tem[i] + ", ");
-//        System.out.println();
-//        System.out.println(test.hIndex(tem));
-//
-//        System.out.println(true || false && false || false);  // ==> t || f || f = t
-//        System.out.println((true || false) && (false || false));    // ==> t && f = f
-//        //int[][] res = test.gameOfLife(new int[][] {{0,1,0},{0,0,1},{1,1,1},{0,0,0}});
-//        System.out.println(Integer.MAX_VALUE);
-//        System.out.println(Long.MAX_VALUE);
-//        System.out.println(test.isAdditiveNumber("0235813"));
-//        System.out.println(test.removeDuplicateLetters("bcabc"));
-////        System.out.println(test.preimageSizeFZF1(153));
-////        System.out.println(test.numberOfSubarrays(new int[] {1, 1, 2, 1, 1}, 3));
-////        System.out.println(test.minimumSwap("xx", "yy"));
-////        System.out.println(test.transformArray(new int[] {1, 6, 3, 4, 3, 5}));
-//        int MOD = 1_000_000_007;
-//        System.out.println(MOD);
-//        char[][] board = {{'5','3','.','.','7','.','.','.','.'},{'6','.','.','1','9','5','.','.','.'},
-//                {'.','9','8','.','.','.','.','6','.'},{'8','.','.','.','6','.','.','.','3'},
-//                {'4','.','.','8','.','3','.','.','1'},{'7','.','.','.','2','.','.','.','6'},
-//                {'.','6','.','.','.','.','2','8','.'},{'.','.','.','4','1','9','.','.','5'},
-//                {'.','.','.','.','8','.','.','7','9'}};
-        //test.solveSudoku(board);
-//        System.out.println(6 / 3 * 3);
-//        System.out.println(test.findMin(new int[] {}));
-//
-//        System.out.println(test.restoreIpAddresses("2736786374048"));
-//        //String str = "aaa";
-//        //str = String.format("%-5s", str);
-//        //System.out.println(str);
-//        System.out.println(test.minWindow("ab", "a"));
+        System.out.println(test.sumEvenAfterQueries(new int[] {1, 2, 3, 4}, new int[][] {
+                {1, 0}, {-3, 1}, {-4, 0}, {2, 3}
+        }));
+        System.out.println(test.judgeSquareSum(Integer.MAX_VALUE));
+        System.out.println(test.isLongPressedName("kikcxmvzi", "kiikcxxmmvvzz"));
+        System.out.println(test.canCompleteCircuit(new int[] {3, 3, 4}, new int[] {3, 4, 4}));
+        System.out.println(test.reconstructQueue(new int[][] {{7, 0}, {4, 4}, {7, 1}, {5, 0}, {6, 1}, {5, 2}}));
+        System.out.println(test.computeArea(-2, -2, 2, 2, -3, -3, 3, -1));
+        System.out.println(test.closedIsland(new int[][] {{1}}));
+        System.out.println(test.minRemoveToMakeValid("))(("));
+        StringBuilder sb1 = new StringBuilder("safqweffdbfd");
+        sb1.deleteCharAt(3);
+        String temp = "1s3 456";
+        System.out.println(test.shortestCompletingWord(temp, new String[] {"looks", "pest", "stew", "show"}));
+        temp = temp.toLowerCase();
+        System.out.println(temp);
+        System.out.println(test.oddCells(2, 3, new int[][] {{0, 1}, {1, 1}}));
+        System.out.println(test.combinationSum3(3, 7));
+        StringBuilder sb = new StringBuilder();
+
+        System.out.println(test.isIsomorphic1("aba", "cde"));
+        String str = "abcabbcaa";
+        char[] ch1 = str.toCharArray();
+        for (int i = 0; i < str.length(); i++)
+            System.out.println(str.indexOf(ch1[i]));
+        test.rotate(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 6);
+        int[] dp = IntStream.range(-1, 10).toArray();
+        for (int i: dp)
+            System.out.print(i + ", ");
+        System.out.println(test.partition3("aab"));
+        System.out.println(test.findOrder(4, new int[][] {{1,0}, {2,0}, {3,1}, {3,2}}));
+        int[] tem =
+                new int[] {6,6,6,6,6,6,6};
+        Arrays.sort(tem);
+        for (int i = 0; i < tem.length; i++)
+            System.out.print(tem[i] + ", ");
+        System.out.println();
+        System.out.println(test.hIndex(tem));
+
+        System.out.println(true || false && false || false);  // ==> t || f || f = t
+        System.out.println((true || false) && (false || false));    // ==> t && f = f
+        //int[][] res = test.gameOfLife(new int[][] {{0,1,0},{0,0,1},{1,1,1},{0,0,0}});
+        System.out.println(Integer.MAX_VALUE);
+        System.out.println(Long.MAX_VALUE);
+        System.out.println(test.isAdditiveNumber("0235813"));
+        System.out.println(test.removeDuplicateLetters("bcabc"));
+//        System.out.println(test.preimageSizeFZF1(153));
+//        System.out.println(test.numberOfSubarrays(new int[] {1, 1, 2, 1, 1}, 3));
+//        System.out.println(test.minimumSwap("xx", "yy"));
+//        System.out.println(test.transformArray(new int[] {1, 6, 3, 4, 3, 5}));
+        int MOD = 1_000_000_007;
+        System.out.println(MOD);
+        char[][] board = {{'5','3','.','.','7','.','.','.','.'},{'6','.','.','1','9','5','.','.','.'},
+                {'.','9','8','.','.','.','.','6','.'},{'8','.','.','.','6','.','.','.','3'},
+                {'4','.','.','8','.','3','.','.','1'},{'7','.','.','.','2','.','.','.','6'},
+                {'.','6','.','.','.','.','2','8','.'},{'.','.','.','4','1','9','.','.','5'},
+                {'.','.','.','.','8','.','.','7','9'}};
+        test.solveSudoku(board);
+        System.out.println(6 / 3 * 3);
+        System.out.println(test.findMin(new int[] {}));
+
+        System.out.println(test.restoreIpAddresses("2736786374048"));
+        //String str = "aaa";
+        //str = String.format("%-5s", str);
+        //System.out.println(str);
+        System.out.println(test.minWindow("ab", "a"));
         TreeNode t1 = new TreeNode(3);
         TreeNode t2 = new TreeNode(9);
         TreeNode t3 = new TreeNode(20);
@@ -8623,75 +8779,75 @@ public class Test {
         t1.right = t3;
         t3.left = t4;
         t3.right = t5;
-       // t4.left = t6;
-       // t4.right = t7;
-//        System.out.println(test.isBalanced(t1));
-//        TreeNode res = test.convertBST(t1);
-//        System.out.println(test.findUnsortedSubarray(new int[] {1,3,2,2,2}));
+        t4.left = t6;
+        t4.right = t7;
+        System.out.println(test.isBalanced(t1));
+        TreeNode res = test.convertBST(t1);
+        System.out.println(test.findUnsortedSubarray(new int[] {1,3,2,2,2}));
 
-//        System.out.println(test.dayOfTheWeek(1, 1, 1971));
-//        List<Character> list = new ArrayList<>();
-//        list.add('A');
-//        list.add('A');
-//        list.add('B');
-//        list.add('B');
-//        list.add('c');
-//        list.remove((Character)'A');
-//        System.out.println(list);
-//        list.remove((Character)'B');
-//        System.out.println(list);
-//        list.remove((Character)'A');
-//        System.out.println(list);
+        System.out.println(test.dayOfTheWeek(1, 1, 1971));
+        List<Character> list = new ArrayList<>();
+        list.add('A');
+        list.add('A');
+        list.add('B');
+        list.add('B');
+        list.add('c');
+        list.remove((Character)'A');
+        System.out.println(list);
+        list.remove((Character)'B');
+        System.out.println(list);
+        list.remove((Character)'A');
+        System.out.println(list);
 
-//        List<List<String>> res = test.solveNQueens(1);
-//        System.out.println(res.size());
-//        for (List<String> list: res)
-//            System.out.println(list);
-//        System.out.println(test.longestCommonSubsequence("cdabbqwe", "acde"));
-//        long start = System.currentTimeMillis();
-//        System.out.println(test.findSubsequences(new int[] {5,5,6}));
-//        long end = System.currentTimeMillis();
-//        System.out.println(end - start);
-        //,3,-4,4,7,7,-3,-3
-//        int[] res = test.dailyTemperatures(new int[] {89,62,70,58,47,47,46,76,100,70});
-//        for (int r: res)
-//            System.out.print(r + ", ");
-//        System.out.println(test.firstUniqChar("asfjdasfkjdsqwoefwed"));
-////        System.out.println(test.longestConsecutive(new int[] {9,1,4,7,3,-1,0,5,8,-1,6}));
-//////        TreeNode node1 = test.makeTreeNode(5);
-//////        TreeNode node2 = test.makeTreeNode(4);
-//////        TreeNode node3 = test.makeTreeNode(8);
-//////        TreeNode node4 = test.makeTreeNode(11);
-//////        TreeNode node5 = test.makeTreeNode(13);
-//////        TreeNode node6 = test.makeTreeNode(4);
-//////        TreeNode node7 = test.makeTreeNode(7);
-//////        TreeNode node8 = test.makeTreeNode(2);
-//////        TreeNode node9 = test.makeTreeNode(5);
-//////        TreeNode node10 = test.makeTreeNode(1);
-//////        node1.left = node2;
-//////        node1.right = node3;
-//////        node2.left = node4;
-//////        node3.left = node5;
-//////        node3.right = node6;
-//////        node4.left = node7;
-//////        node4.right = node8;
-//////        node6.left = node9;
-//////        node6.right = node10;
-//////        List<List<Integer>> result = test.pathSum(node1, 22);
-//////        for (List<Integer> list: result)
-//////            System.out.println(list);
-//////        test.isPalindrome("A man, a plan, a canal: Panama");
-//////        TreeNode root = test.makeTreeNode(1);
-//////        root.left = test.makeTreeNode(2);
-//////        root.right = test.makeTreeNode(0);
-//////        System.out.println(test.hasPathSum(root, 1));
-//////        System.out.println(test.largestNumber(new int[] {0,0,0,0}));
-//////        System.out.println(test.largestRectangleArea1(new int[] {0,0,0,0,0,0,0,0,2147483647}));
-//////        System.out.println(null == null);   // true
-//////        char a = '4', b = '3';
-//////        System.out.println(a > b);
-////
-//////        System.out.println(test.numDecodings("20"));
+        List<List<String>> res = test.solveNQueens(1);
+        System.out.println(res.size());
+        for (List<String> list: res)
+            System.out.println(list);
+        System.out.println(test.longestCommonSubsequence("cdabbqwe", "acde"));
+        long start = System.currentTimeMillis();
+        System.out.println(test.findSubsequences(new int[] {5,5,6}));
+        long end = System.currentTimeMillis();
+        System.out.println(end - start);
+        ,3,-4,4,7,7,-3,-3
+        int[] res = test.dailyTemperatures(new int[] {89,62,70,58,47,47,46,76,100,70});
+        for (int r: res)
+            System.out.print(r + ", ");
+        System.out.println(test.firstUniqChar("asfjdasfkjdsqwoefwed"));
+//        System.out.println(test.longestConsecutive(new int[] {9,1,4,7,3,-1,0,5,8,-1,6}));
+////        TreeNode node1 = test.makeTreeNode(5);
+////        TreeNode node2 = test.makeTreeNode(4);
+////        TreeNode node3 = test.makeTreeNode(8);
+////        TreeNode node4 = test.makeTreeNode(11);
+////        TreeNode node5 = test.makeTreeNode(13);
+////        TreeNode node6 = test.makeTreeNode(4);
+////        TreeNode node7 = test.makeTreeNode(7);
+////        TreeNode node8 = test.makeTreeNode(2);
+////        TreeNode node9 = test.makeTreeNode(5);
+////        TreeNode node10 = test.makeTreeNode(1);
+////        node1.left = node2;
+////        node1.right = node3;
+////        node2.left = node4;
+////        node3.left = node5;
+////        node3.right = node6;
+////        node4.left = node7;
+////        node4.right = node8;
+////        node6.left = node9;
+////        node6.right = node10;
+////        List<List<Integer>> result = test.pathSum(node1, 22);
+////        for (List<Integer> list: result)
+////            System.out.println(list);
+////        test.isPalindrome("A man, a plan, a canal: Panama");
+////        TreeNode root = test.makeTreeNode(1);
+////        root.left = test.makeTreeNode(2);
+////        root.right = test.makeTreeNode(0);
+////        System.out.println(test.hasPathSum(root, 1));
+////        System.out.println(test.largestNumber(new int[] {0,0,0,0}));
+////        System.out.println(test.largestRectangleArea1(new int[] {0,0,0,0,0,0,0,0,2147483647}));
+////        System.out.println(null == null);   // true
+////        char a = '4', b = '3';
+////        System.out.println(a > b);
+//
+////        System.out.println(test.numDecodings("20"));
         ListNode l1 = test.makeNode(1);
         ListNode l2 = test.makeNode(2);
         ListNode l3 = test.makeNode(3);
@@ -8706,436 +8862,436 @@ public class Test {
         l2.next = l3;
         l3.next = l4;
         l4.next = l5;
-        //l5.next = l6;
-//        test.removeZeroSumSublists(l1);
-////        l5.next = l6;
-////        l6.next = l7;
-////        l7.next = l8;
-////        int[] ints = test.nextLargerNodes1(l1);
-////        for (int i: ints)
-////            System.out.print(i + ", ");
-////         l3.next = l4;
-////        l4.next = l5;
-////        test.removeElements1(l1, 2);
-////        System.out.println(l1 + " , " + l1.next);
+        l5.next = l6;
+        test.removeZeroSumSublists(l1);
+//        l5.next = l6;
+//        l6.next = l7;
+//        l7.next = l8;
+//        int[] ints = test.nextLargerNodes1(l1);
+//        for (int i: ints)
+//            System.out.print(i + ", ");
+//         l3.next = l4;
+//        l4.next = l5;
+//        test.removeElements1(l1, 2);
+//        System.out.println(l1 + " , " + l1.next);
+//        l2.next = l3;
+//        test.reverseList11(l1);
+//        System.out.println(test.jump(new int[] {3,4,2,4,5,4,3,2,4,7,6,4,3,2,4,2}));
+////        System.out.println(test.dieSimulator(2, new int[] {1, 1, 2, 2, 2, 3}));
+////        System.out.println(test.balancedStringSplit("RLLLRLLRRR"));
+////        ListNode l1 = test.makeNode(1);
+////        ListNode l2 = test.makeNode(1);
+////        ListNode l3 = test.makeNode(2);
+////        l1.next = l2;
 ////        l2.next = l3;
-////        test.reverseList11(l1);
-////        System.out.println(test.jump(new int[] {3,4,2,4,5,4,3,2,4,7,6,4,3,2,4,2}));
-//////        System.out.println(test.dieSimulator(2, new int[] {1, 1, 2, 2, 2, 3}));
-//////        System.out.println(test.balancedStringSplit("RLLLRLLRRR"));
-//////        ListNode l1 = test.makeNode(1);
+////        test.deleteDuplicates(l1);
+////        for (int i = 1; i < 100; i++) {
+////            double temp = Math.pow(4, i);
+////            if (temp > Integer.MAX_VALUE) {
+////                System.out.println(i);
+////                break;
+////            }
+////        }
+////        test.containsNearbyDuplicate(new int[] {1, 2, 3, 1, 2, 3}, 61);
+////        ListNode l1 = test.makeNode(1);
+////        ListNode l2 = test.makeNode(2);
+////        ListNode l3 = test.makeNode(3);
+////        l1.next = l2;
+////        l2.next = l3;
+////        System.out.println(test.reverseList1(l1));
+////        int i = -234;
+////        i = Math.abs(i);
+////        System.out.println(i);
+////        StringBuilder sb = new StringBuilder("wefsdf");
+////        sb.reverse();
+////        System.out.println(sb);
+////        System.out.println(test.majorityElement(new int[] {3, 3, 4}));
+//////        ListNode l1 = test.makeNode(4);
 //////        ListNode l2 = test.makeNode(1);
-//////        ListNode l3 = test.makeNode(2);
+//////        ListNode l3 = test.makeNode(8);
+//////        ListNode l4 = test.makeNode(4);
+//////        ListNode l5 = test.makeNode(5);
 //////        l1.next = l2;
 //////        l2.next = l3;
-//////        test.deleteDuplicates(l1);
-//////        for (int i = 1; i < 100; i++) {
-//////            double temp = Math.pow(4, i);
-//////            if (temp > Integer.MAX_VALUE) {
-//////                System.out.println(i);
-//////                break;
-//////            }
+//////        l3.next = l4;
+//////        l4.next = l5;
+//////
+//////        ListNode l21 = test.makeNode(5);
+//////        ListNode l22 = test.makeNode(0);
+//////        ListNode l23 = test.makeNode(1);
+//////        l21.next = l22;
+//////        l22.next = l23;
+//////        l23.next = l3;
+//////
+//////        ListNode res = test.getIntersectionNode(l1, l21);
+//////        System.out.println(res.val);
+////
+////
+//////        test.reverseString(new char[]{});
+//////        System.out.println(test.reverseStr("avcdefg", 2));
+//////        System.out.println(test.isMatch("b", "ab*b"));
+//////        List<Integer> list = test.countSteppingNumbers(0, 0);
+//////        for (int i = 0; i < list.size(); i++) {
+//////            System.out.print(list.get(i) + " ");
+//////            if (i % 25 == 0)
+//////                System.out.println();
 //////        }
-//////        test.containsNearbyDuplicate(new int[] {1, 2, 3, 1, 2, 3}, 61);
-//////        ListNode l1 = test.makeNode(1);
-//////        ListNode l2 = test.makeNode(2);
-//////        ListNode l3 = test.makeNode(3);
-//////        l1.next = l2;
-//////        l2.next = l3;
-//////        System.out.println(test.reverseList1(l1));
-//////        int i = -234;
-//////        i = Math.abs(i);
+//////        System.out.println();
+//////        System.out.println(2 * Math.pow(10, 8));
+//////         System.out.println(Integer.MAX_VALUE);
+////
+//////            int i = longestValidParentheses(")()()(((((()");
+//////            System.out.println(i);
+////
+//////            int k = search(new int[] {15,16,19,20,25,1,3,4,5,7,10,14}, 25);
+//////            System.out.print(k);
+//////        String str = "aacdefcaaywwkew";    //aacdefcaaywwkew
+//////        String result = longestPalindrome(str);
+//////        System.out.println(result);
+////
+//////        String str = "LEETCODEISHIRING";
+//////        String result = convert(str, 4);
+//////        System.out.println(result);
+////
+//////        String s = "-23523";
+//////        int i = Integer.valueOf(s);
 //////        System.out.println(i);
-//////        StringBuilder sb = new StringBuilder("wefsdf");
-//////        sb.reverse();
-//////        System.out.println(sb);
-//////        System.out.println(test.majorityElement(new int[] {3, 3, 4}));
-////////        ListNode l1 = test.makeNode(4);
-////////        ListNode l2 = test.makeNode(1);
-////////        ListNode l3 = test.makeNode(8);
-////////        ListNode l4 = test.makeNode(4);
-////////        ListNode l5 = test.makeNode(5);
-////////        l1.next = l2;
-////////        l2.next = l3;
-////////        l3.next = l4;
-////////        l4.next = l5;
-////////
-////////        ListNode l21 = test.makeNode(5);
-////////        ListNode l22 = test.makeNode(0);
-////////        ListNode l23 = test.makeNode(1);
-////////        l21.next = l22;
-////////        l22.next = l23;
-////////        l23.next = l3;
-////////
-////////        ListNode res = test.getIntersectionNode(l1, l21);
-////////        System.out.println(res.val);
+////
+//////        boolean f = isPalindrome(100021);
+//////        System.out.println(f);
+//////        int i = 3;
+//////
+//////        String str = "sdfdf";
+//////        char s = str.charAt(546);
+////
+//////        int i = romanToInt("MDLXX");
+//////        System.out.println(i);
+////
+//////        int[] ints = {2, 5, 3, 1, 8, 9, 6, 5};
+//////        Arrays.sort(ints);
+//////        List<Integer> list = Arrays.stream(ints).boxed().collect(Collectors.toList());
+//////        ArrayList<Integer> list1 = new ArrayList<>(list);
+//////        System.out.println(list);
+////
+//////        List<List<Integer>> lists = threeSum(new int[]{-2, 0, 1, 1, 2});
+//////        System.out.println(lists);
+//////        List<String> stringList = letterCombinations("");
+//////        for (String str : stringList)
+//////            System.out.println(str);
+////
+//////        List<List<Integer>> stringList = fourSum(new int[]{1,-2,-5,-4,-3,3,3,5}, -11);
+//////        for (List<Integer> integers : stringList)
+//////            System.out.println(integers);
+//////            ListNode node = new ListNode(1);
+//////            node.next = new ListNode(2);
+//////            node.next.next = new ListNode(3);
+//////            node.next.next.next = new ListNode(4);
+//////            node.next.next.next.next = new ListNode(5);
+//////            ListNode node1 = removeNthFromEnd(node, 2);
+//////
+//////            while (node1 != null) {
+//////                System.out.print(node.val + " , ");
+//////                node = node.next;
+//////            }
+//////        boolean flag = isValid("{[]}");
+//////        System.out.println(flag);
+////
+//////        String str = "wessdc";
+//////        String sbu = str.substring(6, 6);
+//////        System.out.println(sbu);
+//////        List<String> list = generateParenthesis(4);
+//////        for (String str : list)
+//////            System.out.println(str);
+//////        ListNode node = new ListNode(1);
+//////            node.next = new ListNode(2);
+//////            node.next.next = new ListNode(3);
+//////            node.next.next.next = new ListNode(4);
+//////            node.next.next.next.next = new ListNode(5);
+//////        node.next.next.next.next.next = new ListNode(6);
+//////        node.next.next.next.next.next.next = new ListNode(7);
 //////
 //////
-////////        test.reverseString(new char[]{});
-////////        System.out.println(test.reverseStr("avcdefg", 2));
-////////        System.out.println(test.isMatch("b", "ab*b"));
-////////        List<Integer> list = test.countSteppingNumbers(0, 0);
-////////        for (int i = 0; i < list.size(); i++) {
-////////            System.out.print(list.get(i) + " ");
-////////            if (i % 25 == 0)
-////////                System.out.println();
-////////        }
-////////        System.out.println();
-////////        System.out.println(2 * Math.pow(10, 8));
-////////         System.out.println(Integer.MAX_VALUE);
+//////        ListNode res = swapPairs(node);
+//////        while (res != null) {
+//////            System.out.println(res.val);
+//////            res = res.next;
+//////        }
+//////        int i = removeElement(new int[]{0,1,2,2,3,0,4,2}, 2);
+//////        System.out.println(i);
+//////        int as = divide(-2147483648, -2147483648);
+//////        System.out.println(as);
+////
+//////        int[] ints = nextPermutation(new int[] {1, 2, 3, 5, 4, 3, 2, 1});
+//////        for (int i = 0; i < ints.length; i++)
+//////            System.out.print(ints[i] + " , ");
+////
+//////        int[] ints = new int[]{7,6,5,5,2};
+//////        for (int i = 0; i < ints.length / 2; i++) {
+//////            int temp = ints[i];
+//////            ints[i] = ints[ints.length - 1 - i];
+//////            ints[ints.length - 1 - i] = temp;
+//////        }
+//////        for (int i : ints)
+//////            System.out.print(i + " , ");
+//////        int[] ints = searchRange(new int[]{}, 0);
+//////        System.out.println(ints[0] + " , " + ints[1]);
+//////        String str = countAndSay(8);
+//////        System.out.println(str);
+//////        combinationSum(new int[]{2, 3, 5}, 8);
+//////        for (List<Integer> list : listList) {
+//////            for (Integer integer : list) {
+//////                System.out.print(integer + " , ");
+//////            }
+//////            System.out.println();
+//////        }
+////            // 681692778  351251360
+////            // 2147483647
+////            //System.out.println(Integer.MAX_VALUE);
+////
+////            //957747794
+////            //424238336
+//////        int k = findKthNumber(957747794, 424238336);
+//////        System.out.println(k);
+//////        int[][] items = {{1,91},{1,92},{2,93},{2,97},{1,60},{2,77},{1,65},{1,87},{1,100},{2,100},{2,76}};
 //////
-////////            int i = longestValidParentheses(")()()(((((()");
-////////            System.out.println(i);
+//////        int[][] result = highFive(items);
 //////
-////////            int k = search(new int[] {15,16,19,20,25,1,3,4,5,7,10,14}, 25);
-////////            System.out.print(k);
-////////        String str = "aacdefcaaywwkew";    //aacdefcaaywwkew
-////////        String result = longestPalindrome(str);
-////////        System.out.println(result);
+//////        System.out.println(result);
+//////        int[] ints = {2, 1, 2, 4, 3};
+//////        ArrayList<Integer> list = nextGreaterElement(ints);
+//////        Collections.reverse(list);
+//////        System.out.println(list);
+//////        int[] ints = {1, 4, 3, 6, 8, 22, 13, 17, 16};
+//////        int[] ints1 = new int[ints.length * 2];
+//////        System.arraycopy(ints, 0, ints1, 0, ints.length);
+//////        System.arraycopy(ints, 0, ints1, ints.length, ints.length);
+//////        for (int i : ints1)
+//////            System.out.print(i + ", ");
+////
+//////        int[] result = nextGreaterElements(ints);
+//////        for (int i : result)
+//////            System.out.print(i + ", ");
+//////        int i = nextGreaterElement(23792563);
+//////        System.out.print(i);
+//////        int i = maxProfit(new int[]{4, 5, 2, 4, 3, 3, 1, 2, 5}, 1);
+//////        System.out.print(i);
+//////        Node node1 = new Node(1, null, null, null);
+//////        Node node2 = new Node(2, null, null, null);
+//////        Node node3 = new Node(3, null, null, null);
+//////        Node node4 = new Node(4, null, null, null);
+//////        Node node5 = new Node(5, null, null, null);
+//////        Node node6 = new Node(6, null, null, null);
+//////        Node node7 = new Node(7, null, null, null);
+//////        Node node8 = new Node(8, null, null, null);
+//////        Node node9 = new Node(9, null, null, null);
+//////        Node node10 = new Node(10, null, null, null);
+//////        Node node11 = new Node(11, null, null, null);
+//////        Node node12 = new Node(12, null, null, null);
+//////        node1.next = node2;
+//////        node2.prev = node1;
+//////        node2.next = node3;
+//////        node3.prev = node2;
+//////        node3.next = node4;
+//////        node3.child = node7;
+//////        node4.prev = node3;
+//////        node4.next = node5;
+//////        node5.prev = node4;
+//////        node5.next = node6;
+//////        node6.prev = node5;
+//////        node7.prev = node3;
+//////        node7.next = node8;
+//////        node8.prev = node7;
+//////        node8.next = node9;
+//////        node8.child = node11;
+//////        node11.prev = node8;
+//////        node9.prev = node8;
+//////        node9.next = node10;
+//////        node10.prev = node9;
+//////        node11.next = node12;
+//////        node12.prev = node11;
 //////
-////////        String str = "LEETCODEISHIRING";
-////////        String result = convert(str, 4);
-////////        System.out.println(result);
+//////        getOrder(node1);
 //////
-////////        String s = "-23523";
-////////        int i = Integer.valueOf(s);
-////////        System.out.println(i);
+//////        System.out.println();
+//////        Node result = flatten(node1);
+//////        getOrder(result);
 //////
-////////        boolean f = isPalindrome(100021);
-////////        System.out.println(f);
-////////        int i = 3;
-////////
-////////        String str = "sdfdf";
-////////        char s = str.charAt(546);
-//////
-////////        int i = romanToInt("MDLXX");
-////////        System.out.println(i);
-//////
-////////        int[] ints = {2, 5, 3, 1, 8, 9, 6, 5};
-////////        Arrays.sort(ints);
-////////        List<Integer> list = Arrays.stream(ints).boxed().collect(Collectors.toList());
-////////        ArrayList<Integer> list1 = new ArrayList<>(list);
-////////        System.out.println(list);
-//////
-////////        List<List<Integer>> lists = threeSum(new int[]{-2, 0, 1, 1, 2});
-////////        System.out.println(lists);
-////////        List<String> stringList = letterCombinations("");
-////////        for (String str : stringList)
-////////            System.out.println(str);
-//////
-////////        List<List<Integer>> stringList = fourSum(new int[]{1,-2,-5,-4,-3,3,3,5}, -11);
-////////        for (List<Integer> integers : stringList)
-////////            System.out.println(integers);
-////////            ListNode node = new ListNode(1);
-////////            node.next = new ListNode(2);
-////////            node.next.next = new ListNode(3);
-////////            node.next.next.next = new ListNode(4);
-////////            node.next.next.next.next = new ListNode(5);
-////////            ListNode node1 = removeNthFromEnd(node, 2);
-////////
-////////            while (node1 != null) {
-////////                System.out.print(node.val + " , ");
-////////                node = node.next;
-////////            }
-////////        boolean flag = isValid("{[]}");
-////////        System.out.println(flag);
-//////
-////////        String str = "wessdc";
-////////        String sbu = str.substring(6, 6);
-////////        System.out.println(sbu);
-////////        List<String> list = generateParenthesis(4);
-////////        for (String str : list)
-////////            System.out.println(str);
-////////        ListNode node = new ListNode(1);
-////////            node.next = new ListNode(2);
-////////            node.next.next = new ListNode(3);
-////////            node.next.next.next = new ListNode(4);
-////////            node.next.next.next.next = new ListNode(5);
-////////        node.next.next.next.next.next = new ListNode(6);
-////////        node.next.next.next.next.next.next = new ListNode(7);
-////////
-////////
-////////        ListNode res = swapPairs(node);
-////////        while (res != null) {
-////////            System.out.println(res.val);
-////////            res = res.next;
-////////        }
-////////        int i = removeElement(new int[]{0,1,2,2,3,0,4,2}, 2);
-////////        System.out.println(i);
-////////        int as = divide(-2147483648, -2147483648);
-////////        System.out.println(as);
-//////
-////////        int[] ints = nextPermutation(new int[] {1, 2, 3, 5, 4, 3, 2, 1});
-////////        for (int i = 0; i < ints.length; i++)
-////////            System.out.print(ints[i] + " , ");
-//////
-////////        int[] ints = new int[]{7,6,5,5,2};
-////////        for (int i = 0; i < ints.length / 2; i++) {
-////////            int temp = ints[i];
-////////            ints[i] = ints[ints.length - 1 - i];
-////////            ints[ints.length - 1 - i] = temp;
-////////        }
-////////        for (int i : ints)
-////////            System.out.print(i + " , ");
-////////        int[] ints = searchRange(new int[]{}, 0);
-////////        System.out.println(ints[0] + " , " + ints[1]);
-////////        String str = countAndSay(8);
-////////        System.out.println(str);
-////////        combinationSum(new int[]{2, 3, 5}, 8);
-////////        for (List<Integer> list : listList) {
-////////            for (Integer integer : list) {
-////////                System.out.print(integer + " , ");
-////////            }
-////////            System.out.println();
-////////        }
-//////            // 681692778  351251360
-//////            // 2147483647
-//////            //System.out.println(Integer.MAX_VALUE);
-//////
-//////            //957747794
-//////            //424238336
-////////        int k = findKthNumber(957747794, 424238336);
-////////        System.out.println(k);
-////////        int[][] items = {{1,91},{1,92},{2,93},{2,97},{1,60},{2,77},{1,65},{1,87},{1,100},{2,100},{2,76}};
-////////
-////////        int[][] result = highFive(items);
-////////
-////////        System.out.println(result);
-////////        int[] ints = {2, 1, 2, 4, 3};
-////////        ArrayList<Integer> list = nextGreaterElement(ints);
-////////        Collections.reverse(list);
-////////        System.out.println(list);
-////////        int[] ints = {1, 4, 3, 6, 8, 22, 13, 17, 16};
-////////        int[] ints1 = new int[ints.length * 2];
-////////        System.arraycopy(ints, 0, ints1, 0, ints.length);
-////////        System.arraycopy(ints, 0, ints1, ints.length, ints.length);
-////////        for (int i : ints1)
-////////            System.out.print(i + ", ");
-//////
-////////        int[] result = nextGreaterElements(ints);
-////////        for (int i : result)
-////////            System.out.print(i + ", ");
-////////        int i = nextGreaterElement(23792563);
-////////        System.out.print(i);
-////////        int i = maxProfit(new int[]{4, 5, 2, 4, 3, 3, 1, 2, 5}, 1);
-////////        System.out.print(i);
-////////        Node node1 = new Node(1, null, null, null);
-////////        Node node2 = new Node(2, null, null, null);
-////////        Node node3 = new Node(3, null, null, null);
-////////        Node node4 = new Node(4, null, null, null);
-////////        Node node5 = new Node(5, null, null, null);
-////////        Node node6 = new Node(6, null, null, null);
-////////        Node node7 = new Node(7, null, null, null);
-////////        Node node8 = new Node(8, null, null, null);
-////////        Node node9 = new Node(9, null, null, null);
-////////        Node node10 = new Node(10, null, null, null);
-////////        Node node11 = new Node(11, null, null, null);
-////////        Node node12 = new Node(12, null, null, null);
-////////        node1.next = node2;
-////////        node2.prev = node1;
-////////        node2.next = node3;
-////////        node3.prev = node2;
-////////        node3.next = node4;
-////////        node3.child = node7;
-////////        node4.prev = node3;
-////////        node4.next = node5;
-////////        node5.prev = node4;
-////////        node5.next = node6;
-////////        node6.prev = node5;
-////////        node7.prev = node3;
-////////        node7.next = node8;
-////////        node8.prev = node7;
-////////        node8.next = node9;
-////////        node8.child = node11;
-////////        node11.prev = node8;
-////////        node9.prev = node8;
-////////        node9.next = node10;
-////////        node10.prev = node9;
-////////        node11.next = node12;
-////////        node12.prev = node11;
-////////
-////////        getOrder(node1);
-////////
-////////        System.out.println();
-////////        Node result = flatten(node1);
-////////        getOrder(result);
-////////
-//////////       ArrayList<Integer> list = test1();
-//////////       System.out.println(list);
-////////        int[] ints = new int[] {1,8,6,2,5,4,8,3,7};   ,879,4234,123,546,33,12,546,78,23,13
-////////        int k = maxArea(ints);
-////////        System.out.println(k);
-////////       long i = 2;
-//////////            long j = 2;
-//////////            long k = 3;
-//////////            long result = ((1 / i)  + j) + k;
-//////////            System.out.println(result);
-//////////            System.out.println(Integer.MAX_VALUE);         int[] ints = new int[] {432,123,546,76,12,547,879,4234,123,546,33}; //2783
-////////            int k = trap(ints);
-////////            System.out.println(k);
-////////
-////////        boolean  f = robot("URR", new int[][]{{4, 2}}, 3,2);
-////////        System.out.println(f);
-//////
-////////            int[][] ints = {{4,2}, {5,1}, {9,0}, {4,3}, {9,3}};
-////////            System.out.println(ints.length);
-////////            Arrays.sort(ints, new Comparator<int[]>() {
-////////                @Override
-////////                public int compare(int[] o1, int[] o2) {
-////////                    if (o1[0] >= o2[0])
-////////                        return 1;
-////////                    return -1;
-////////                }
-////////            });
-////////            for (int[] ints1: ints)
-////////                System.out.println(ints1[0] + ", " + ints1[1]);
-////////
-////////            System.out.println(ints[1][1]);
-////////            int[] ints = new int[3];
-////////            for (int i: ints)
-////////                System.out.println(i);
-//////
-////////            int n = 13;
-////////            int[][] leadership =  {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
-////////                    ,{3,8},{3,9},{8,10},{8,11}};
-////////
-////////            HashMap<Integer, HashSet<Integer>> leader = new HashMap<>();
-////////
-////////            for (int i = 1; i <= n; i++)
-////////                leader.put(i, new HashSet<>());
-////////
-////////            for (int i = 0; i < leadership.length; i++) {
-////////                HashSet<Integer> list = leader.get(leadership[i][0]);
-////////                list.add(leadership[i][1]);
-////////            }
-////////
-////////            for (int i = 1; i <= n; i++) {
-////////                if (leader.get(i).size() == 0)
-////////                    continue;
-////////                leader.get(i).addAll(getSubLeader(leader, leader.get(i)));
-////////            }
-//////
-////////            leader.get(1).addAll(getSubLeader(leader, leader.get(1)));
-////////
-////////            HashSet<Integer> l1 = leader.get(1);
-////////            System.out.println("aaa " + l1);
-//////
-////////            HashSet<Integer> set = leader.get(1);
-////////            System.out.println(set);
-//////
-////////            for (HashMap.Entry<Integer, HashSet<Integer>> entry: leader.entrySet()) {
-////////                System.out.println(entry.getKey());
-////////                HashSet<Integer> set = entry.getValue();
-////////                System.out.println(set);
-////////            }
-////////            int n = 13;
-////////            int[][] a1 = {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
-////////                    ,{3,8},{3,9},{8,10},{8,11}};
-////////            int[][] a2 = {{2,2,50},{1,1,111},{1,7,456},{3,5}};
-////////            int[] result = bonus(n, a1, a2);
-////////            for (int i: result)
-////////                System.out.print(i + ", ");
-////////            System.out.print((7 / 4) + 1);
-////////            int[] answers = new int[] {2,2,2,2};
-////////            int count = numRabbits(answers);
-////////            System.out.println(count);
-////////            HashMap<Integer, Integer> each = new HashMap<>();
-////////            for (int i: answers) {
-////////                Integer current = each.get(i);
-////////                each.put(i, current == null ? 1 : current + 1);
-////////            }
-////////            for (Map.Entry<Integer, Integer> entry: each.entrySet()) {
-////////                System.out.print(entry.getKey() + " : ");
-////////                System.out.print(entry.getValue());
-////////                System.out.println();
-////////            }
-////////            int k = totalFruit(new int[] {0,1,2,2});
-////////            System.out.println(k);
-////////            int k = equalSubstring("szrpjazjjhorzeiduufspm","rgwdrgligareauwihaqroy",55);
-////////            System.out.println(k);
-////////
-////////            int k1 = 'f' - 'b';
-////////            System.out.println(k1);
-////////            String result = removeDuplicates("yfttttfbbbbnnnnffbgffffgbbbbgssssgthyyyy", 4);
+////////       ArrayList<Integer> list = test1();
+////////       System.out.println(list);
+//////        int[] ints = new int[] {1,8,6,2,5,4,8,3,7};   ,879,4234,123,546,33,12,546,78,23,13
+//////        int k = maxArea(ints);
+//////        System.out.println(k);
+//////       long i = 2;
+////////            long j = 2;
+////////            long k = 3;
+////////            long result = ((1 / i)  + j) + k;
 ////////            System.out.println(result);
-////////            double result = myPow(0, Integer.MIN_VALUE);
-////////            System.out.println(result);
-////////            char[] chars = {'a', 'b', 'c'};
-////////            char[] chars1 = {'c', 'b', 'a'};
-////////            Arrays.sort(chars1);
-////////            System.out.println(Arrays.equals(chars, chars1));
-////////
-////////            String str1 = "abc";
-////////            String str2 = "abc";
-////////            System.out.println(str1.hashCode());
-////////            System.out.println(str2.hashCode());
-////////
-////////            String[] strings = new String[]{"eat","tea","tan","ate","nat","bat"};
-////////            groupAnagrams(strings);
-////////
-////////            HashMap<String, Integer> map = new HashMap<>();
-////////            for (String str: strings) {
-////////                Integer i = map.get(str);
-////////                map.put(str, i == null ? 1 : ++i);
-////////            }
-////////            System.out.println("----");
-////////            for (Map.Entry<String, Integer> entry: map.entrySet())
-////////                System.out.println(entry.getKey());
-////////            Test test = new Test();
-////////            int[] nums = new int[]{1, 2, 3, 4};
-////////            List<List<Integer>> permute = test.permute(nums);
-////////            for (int i = 0; i < permute.size(); i++) {
-////////                System.out.println(permute.get(i));
-////////            }
-////////            char[][] chars = new char[][] {{'5','3','.','.','7','.','.','.','.'},
-////////                    {'6','.','.','1','9','5','.','.','.'},{'.','9','8','.','.','.','.','6','.'},
-////////                    {'8','.','.','.','6','.','.','.','3'},{'4','.','.','8','.','3','.','.','1'},
-////////                    {'7','.','.','.','2','.','.','.','6'},{'.','6','.','.','.','.','2','8','.'},
-////////                    {'.','.','.','4','1','9','.','.','5'},{'.','.','.','.','8','.','.','7','9'}};
-////////            System.out.println(isValidSudoku(chars));
+////////            System.out.println(Integer.MAX_VALUE);         int[] ints = new int[] {432,123,546,76,12,547,879,4234,123,546,33}; //2783
+//////            int k = trap(ints);
+//////            System.out.println(k);
 //////
-////////            Test test = new Test();
-////////            test.levelOrder(null);
-////////            TreeNode n3 = test.getter(3);
-////////            TreeNode n1 = test.getter(1);
-////////            TreeNode n5 = test.getter(5);
-////////            TreeNode n0 = test.getter(0);
-////////            TreeNode n2 = test.getter(2);
-////////            TreeNode n4 = test.getter(4);
-////////            TreeNode n6 = test.getter(6);
-////////            TreeNode n7 = test.getter(3);
-////////            n3.left = n1;
-////////            n3.right = n5;
-////////            n1.left = n0;
-////////            n1.right = n2;
-////////            n5.left = n4;
-////////            n5.right = n6;
-////////            n2.right = n7;
-////////            System.out.println(test.isValidBST(n3));
-////////
-////////            int[] ints = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-////////            int[] candidates = new int[] {10,1,2,7,6,1,5};
-////////            List<List<Integer>> listList = test.combinationSum2(candidates, 8);
-////////            System.out.println(listList);
-////////        System.out.println(test.multiply("765", "4654"));
-////////        System.out.println(test.mySqrt(4));
-////////        int[] res;
-////////        int a = 31;
-////////        if (a == 3)
-////////            res = new int[10];
-////////        else
-////////            res = new int[20];
-////////        for (int i: res)
-////////            System.out.print(i);
-////////        int[] res = test.plusOne(new int[] {0});
-////////        for (int i: res)
-////////            System.out.print(i + " , ");
-////////        List<List<Integer>> lists = test.permute1(new int[] {1, 2, 3});
-////////        for (List<Integer> list: lists)
-////////            System.out.println(list);
-////////        System.out.println(test.firstMissingPositive(new int[] {7,8,9,10,13}));
-////////        System.out.println(test.getRow(3));
-
+//////        boolean  f = robot("URR", new int[][]{{4, 2}}, 3,2);
+//////        System.out.println(f);
+////
+//////            int[][] ints = {{4,2}, {5,1}, {9,0}, {4,3}, {9,3}};
+//////            System.out.println(ints.length);
+//////            Arrays.sort(ints, new Comparator<int[]>() {
+//////                @Override
+//////                public int compare(int[] o1, int[] o2) {
+//////                    if (o1[0] >= o2[0])
+//////                        return 1;
+//////                    return -1;
+//////                }
+//////            });
+//////            for (int[] ints1: ints)
+//////                System.out.println(ints1[0] + ", " + ints1[1]);
+//////
+//////            System.out.println(ints[1][1]);
+//////            int[] ints = new int[3];
+//////            for (int i: ints)
+//////                System.out.println(i);
+////
+//////            int n = 13;
+//////            int[][] leadership =  {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
+//////                    ,{3,8},{3,9},{8,10},{8,11}};
+//////
+//////            HashMap<Integer, HashSet<Integer>> leader = new HashMap<>();
+//////
+//////            for (int i = 1; i <= n; i++)
+//////                leader.put(i, new HashSet<>());
+//////
+//////            for (int i = 0; i < leadership.length; i++) {
+//////                HashSet<Integer> list = leader.get(leadership[i][0]);
+//////                list.add(leadership[i][1]);
+//////            }
+//////
+//////            for (int i = 1; i <= n; i++) {
+//////                if (leader.get(i).size() == 0)
+//////                    continue;
+//////                leader.get(i).addAll(getSubLeader(leader, leader.get(i)));
+//////            }
+////
+//////            leader.get(1).addAll(getSubLeader(leader, leader.get(1)));
+//////
+//////            HashSet<Integer> l1 = leader.get(1);
+//////            System.out.println("aaa " + l1);
+////
+//////            HashSet<Integer> set = leader.get(1);
+//////            System.out.println(set);
+////
+//////            for (HashMap.Entry<Integer, HashSet<Integer>> entry: leader.entrySet()) {
+//////                System.out.println(entry.getKey());
+//////                HashSet<Integer> set = entry.getValue();
+//////                System.out.println(set);
+//////            }
+//////            int n = 13;
+//////            int[][] a1 = {{1, 2}, {1, 6}, {2, 3}, {2, 5}, {1, 4},{4,12}, {4,13}, {3,7}
+//////                    ,{3,8},{3,9},{8,10},{8,11}};
+//////            int[][] a2 = {{2,2,50},{1,1,111},{1,7,456},{3,5}};
+//////            int[] result = bonus(n, a1, a2);
+//////            for (int i: result)
+//////                System.out.print(i + ", ");
+//////            System.out.print((7 / 4) + 1);
+//////            int[] answers = new int[] {2,2,2,2};
+//////            int count = numRabbits(answers);
+//////            System.out.println(count);
+//////            HashMap<Integer, Integer> each = new HashMap<>();
+//////            for (int i: answers) {
+//////                Integer current = each.get(i);
+//////                each.put(i, current == null ? 1 : current + 1);
+//////            }
+//////            for (Map.Entry<Integer, Integer> entry: each.entrySet()) {
+//////                System.out.print(entry.getKey() + " : ");
+//////                System.out.print(entry.getValue());
+//////                System.out.println();
+//////            }
+//////            int k = totalFruit(new int[] {0,1,2,2});
+//////            System.out.println(k);
+//////            int k = equalSubstring("szrpjazjjhorzeiduufspm","rgwdrgligareauwihaqroy",55);
+//////            System.out.println(k);
+//////
+//////            int k1 = 'f' - 'b';
+//////            System.out.println(k1);
+//////            String result = removeDuplicates("yfttttfbbbbnnnnffbgffffgbbbbgssssgthyyyy", 4);
+//////            System.out.println(result);
+//////            double result = myPow(0, Integer.MIN_VALUE);
+//////            System.out.println(result);
+//////            char[] chars = {'a', 'b', 'c'};
+//////            char[] chars1 = {'c', 'b', 'a'};
+//////            Arrays.sort(chars1);
+//////            System.out.println(Arrays.equals(chars, chars1));
+//////
+//////            String str1 = "abc";
+//////            String str2 = "abc";
+//////            System.out.println(str1.hashCode());
+//////            System.out.println(str2.hashCode());
+//////
+//////            String[] strings = new String[]{"eat","tea","tan","ate","nat","bat"};
+//////            groupAnagrams(strings);
+//////
+//////            HashMap<String, Integer> map = new HashMap<>();
+//////            for (String str: strings) {
+//////                Integer i = map.get(str);
+//////                map.put(str, i == null ? 1 : ++i);
+//////            }
+//////            System.out.println("----");
+//////            for (Map.Entry<String, Integer> entry: map.entrySet())
+//////                System.out.println(entry.getKey());
+//////            Test test = new Test();
+//////            int[] nums = new int[]{1, 2, 3, 4};
+//////            List<List<Integer>> permute = test.permute(nums);
+//////            for (int i = 0; i < permute.size(); i++) {
+//////                System.out.println(permute.get(i));
+//////            }
+//////            char[][] chars = new char[][] {{'5','3','.','.','7','.','.','.','.'},
+//////                    {'6','.','.','1','9','5','.','.','.'},{'.','9','8','.','.','.','.','6','.'},
+//////                    {'8','.','.','.','6','.','.','.','3'},{'4','.','.','8','.','3','.','.','1'},
+//////                    {'7','.','.','.','2','.','.','.','6'},{'.','6','.','.','.','.','2','8','.'},
+//////                    {'.','.','.','4','1','9','.','.','5'},{'.','.','.','.','8','.','.','7','9'}};
+//////            System.out.println(isValidSudoku(chars));
+////
+//////            Test test = new Test();
+//////            test.levelOrder(null);
+//////            TreeNode n3 = test.getter(3);
+//////            TreeNode n1 = test.getter(1);
+//////            TreeNode n5 = test.getter(5);
+//////            TreeNode n0 = test.getter(0);
+//////            TreeNode n2 = test.getter(2);
+//////            TreeNode n4 = test.getter(4);
+//////            TreeNode n6 = test.getter(6);
+//////            TreeNode n7 = test.getter(3);
+//////            n3.left = n1;
+//////            n3.right = n5;
+//////            n1.left = n0;
+//////            n1.right = n2;
+//////            n5.left = n4;
+//////            n5.right = n6;
+//////            n2.right = n7;
+//////            System.out.println(test.isValidBST(n3));
+//////
+//////            int[] ints = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+//////            int[] candidates = new int[] {10,1,2,7,6,1,5};
+//////            List<List<Integer>> listList = test.combinationSum2(candidates, 8);
+//////            System.out.println(listList);
+//////        System.out.println(test.multiply("765", "4654"));
+//////        System.out.println(test.mySqrt(4));
+//////        int[] res;
+//////        int a = 31;
+//////        if (a == 3)
+//////            res = new int[10];
+//////        else
+//////            res = new int[20];
+//////        for (int i: res)
+//////            System.out.print(i);
+//////        int[] res = test.plusOne(new int[] {0});
+//////        for (int i: res)
+//////            System.out.print(i + " , ");
+//////        List<List<Integer>> lists = test.permute1(new int[] {1, 2, 3});
+//////        for (List<Integer> list: lists)
+//////            System.out.println(list);
+//////        System.out.println(test.firstMissingPositive(new int[] {7,8,9,10,13}));
+//////        System.out.println(test.getRow(3));
+        */
     }
 }
 
