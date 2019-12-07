@@ -8647,25 +8647,312 @@ public class Test {
         return Math.max(maxDepth1(root.left) + 1, maxDepth1(root.right) + 1);
     }
 
+    // 859
+    public boolean buddyStrings(String A, String B) {
+        int times = 0;              // record the number of characters which are difference
+        int lengthA = A.length();
+        int lengthB = B.length();
+        int first = -1, second = -1;    // record the two difference index if exists.
+        if (lengthA != lengthB || lengthA < 2)
+            return false;
+        HashSet<Character> set = new HashSet<>();
+        boolean flag = false;
+        // if times == 0, check whether there are at least two same characters in A.
+        for (int i = 0; i < lengthA; i++) {
+            char a = A.charAt(i);
+            if (!flag && set.contains(a))
+                flag = true;
+            if (!flag)
+                set.add(a);
+            char b = B.charAt(i);
+            if (a != b) {
+                times++;
+                if (times == 1)
+                    first = i;
+                if (times == 2)
+                    second = i;
+            }
+            if (times >= 3)
+                return false;
+        }
+        if (times == 2)
+            return A.charAt(first) == B.charAt(second) && A.charAt(second) == B.charAt(first);
+        return times == 0 && flag;    // length >= 2
+    }
+
+    // 856      思路: "(()(()))" == "(())" + ((()))"
+    // 当遇到 "()",其实无须考虑后面的,肯定平衡,所以直接加上当前的结果2 ^ 层数 - 1
+    public int scoreOfParentheses(String S) {
+        int depth = 0;
+        int res = 0;
+        int length = S.length();
+        for (int i = 0; i < length; i++) {
+            char c = S.charAt(i);
+            if (c == '(')
+                depth++;
+            else
+                depth--;
+            if (c == ')' && S.charAt(i - 1) == '(')
+                res += 1 << depth;
+        }
+        return res;
+    }
+
+    // 858
+    public int mirrorReflection(int p, int q) {
+        if (q == 0)
+            return 0;
+        int g = gcd(p, q);
+        int s = p * q / g;
+        int k = s / q;
+        if (k % 2 == 0)
+            return 2;
+        return k * q / p % 2 == 0 ? 0 : 1;
+    }
+
+    public int gcd(int a, int b) {
+        //return a == 0 ? b : gcd(b % a, a);
+        return b == 0 ? a : gcd(b, a % b);
+    }
+
+    // 860
+    public boolean lemonadeChange(int[] bills) {
+        int numOfFive = 0, numOfTen = 0;
+        for (int bill: bills) {
+            if (bill == 20) {
+                if (numOfTen >= 1 && numOfFive >= 1) {
+                    numOfTen--;
+                    numOfFive--;
+                }
+                else if (numOfTen == 0 && numOfFive >= 3)
+                    numOfFive -= 3;
+                else
+                    return false;
+            }
+            else if (bill == 10) {
+                if (numOfFive == 0)
+                    return false;
+                numOfFive--;
+                numOfTen++;
+            }
+            else   // bill == 5
+                numOfFive++;
+        }
+        return true;
+    }
+
+    public int matrixScore(int[][] A) {
+        int m = A.length;
+        int n = A[0].length;
+        int temp = 0;
+        for (int i = 0; i < m; i++) {
+            if (A[i][0] == 0)
+                rotateHelper(A, false, i);
+        }
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                if (A[i][j] == 1)
+                    temp++;
+            }
+            if (temp <= m / 2)
+                rotateHelper(A, true, j);
+            temp = 0;
+        }
+        int res = 0;
+        int base;
+        for (int i = 0; i < m; i++) {
+            base = 0;
+            for (int j = n - 1; j >= 0; j--) {
+                res += A[i][j] == 0 ? 0 : Math.pow(2, base);
+                base++;
+            }
+        }
+        return res;
+    }
+
+    public void rotateHelper(int[][] A, boolean flag, int index) {
+        if (flag) {     // 垂直rotate
+            for (int i = 0; i < A.length; i++)
+                A[i][index] = A[i][index] == 1 ? 0 : 1;
+        }
+        else {
+            for (int j = 0; j < A[0].length; j++)
+                A[index][j] = A[index][j] == 1 ? 0 : 1;
+        }
+    }
+
+    // 867  矩阵转置
+    public int[][] transpose(int[][] A) {
+        int m = A.length;
+        int n = A[0].length;
+        int[][] res = new int[n][m];
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < n; j++)
+                res[j][i] = A[i][j];
+        return res;
+    }
+
+    // 868
+    public int binaryGap(int N) {
+        int res = 0;
+        if (isPowerOfTwo(N))
+            return res;
+        StringBuilder sb = new StringBuilder();
+        while (N > 0) {
+            int mod = N % 2;
+            sb.append(mod);
+            N /= 2;
+        }
+        sb.reverse();
+        String str = sb.toString();
+        int length = str.length();
+        int prev = 0, next = -1;
+        boolean flag = false;
+        for (int i = 1; i < length; i++) {
+            if (str.charAt(i) == '1') {
+                if (!flag) {
+                    next = i;
+                    flag = true;
+                }
+                else {
+                    prev = next;
+                    next = i;
+                }
+                res = res > next - prev ? res : next - prev;
+            }
+        }
+        return res;
+    }
+
+    // 869 回溯,无剪枝 613ms
+    public boolean reorderedPowerOf2(int N) {
+        String str = String.valueOf(N);
+        int length = str.length();
+        boolean[] visited = new boolean[length];
+        return reorderedPowerOf2Helper(str, visited, length, 0, "");
+    }
+
+    public boolean reorderedPowerOf2Helper(String str, boolean[] visited, int length, int current, String tmp) {
+        if (current == length)
+            return isPowerOfTwo(Integer.valueOf(tmp));
+
+        for (int i = 0; i < length; i++) {
+            if (visited[i])
+                continue;
+            char c = str.charAt(i);
+            if (current == 0 && c == '0')
+                continue;
+            tmp += c;
+            visited[i] = true;
+            if (reorderedPowerOf2Helper(str, visited, length, current + 1, tmp))
+                return true;
+            tmp = tmp.substring(0, current);
+            visited[i] = false;
+        }
+        return false;
+    }
+
+    // 870      习惯性地直接回溯找全排列,但会超时,这题不适合用回溯
+    public int[] advantageCount1(int[] A, int[] B) {
+        List<List<Integer>> combinations = new ArrayList<>();
+        List<Integer> combination = new ArrayList<>();
+        int length = A.length;
+        boolean[] visited = new boolean[length];
+        advantageCountHelper(combinations, combination, visited,  0, length, A);
+        int[] res = new int[length];
+        int max = 0;
+        int maxIndex = 0;
+        int length1 = combinations.size();
+        for (int i = 0; i < length1; i++) {
+            List<Integer> list = combinations.get(i);
+            int current = 0;
+            int size = list.size();
+            for (int j = 0; j < size; j++)
+                if (list.get(j) > B[j])
+                    current++;
+            if (max < current) {
+                max = current;
+                maxIndex = i;
+            }
+        }
+        List<Integer> maxList = combinations.get(maxIndex);
+        for (int i = 0; i < length; i++)
+            res[i] = maxList.get(i);
+        return res;
+
+    }
+
+    public void advantageCountHelper(List<List<Integer>> combinations, List<Integer> combination,
+                                     boolean[] visited, int current, int length, int[] A) {
+        if (current == length) {
+            combinations.add(new ArrayList<>(combination));
+            return;
+        }
+        for (int i = 0; i < length; i++) {
+            if (visited[i])
+                continue;
+            combination.add(A[i]);
+            visited[i] = true;
+            advantageCountHelper(combinations, combination, visited, current + 1, length, A);
+            visited[i] = false;
+            combination.remove(current);
+        }
+    }
+
+    // 870 贪心, 如果没有更大,那就先用最小。否则就找最小的更大.
+    public int[] advantageCount(int[] A, int[] B) {
+        int length = A.length;
+        List<Integer> list = Arrays.stream(A).boxed().collect(Collectors.toList());
+        Collections.sort(list);
+        int[] res = new int[length];
+        for (int i = 0; i < length; i++) {
+            int size = list.size() - 1;
+            System.out.println(list.get(size));
+            if (list.get(size) <= B[i]) {        //没有更大的,那就把最小的用了
+                res[i] = list.get(0);
+                list.remove(0);
+            }
+            else {
+                for (int j = 0; j <= size; j++) {
+                    int temp = list.get(j);
+                    if (temp > B[i]) {
+                        res[i] = temp;
+                        list.remove(j);
+                        break;
+                    }
+                }
+            }
+        }
+        return res;
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
-        TreeNode t1 = new TreeNode(1);
-        TreeNode t2 = new TreeNode(2);
-        TreeNode t3 = new TreeNode(3);
-        TreeNode t4 = new TreeNode(4);
-        TreeNode t5 = new TreeNode(5);
-        TreeNode t6 = new TreeNode(6);
-        TreeNode t7 = new TreeNode(7);
-        TreeNode t8 = new TreeNode(8);
-        t1.left = t2;
-        t1.right = t3;
-        t2.left = t4;
-        t2.right = t5;
-        t3.left = t6;
-        t3.right = t7;
-        t6.right = t8;
-        test.delNodes(t1, new int[] {3, 5, 8});
+        int[] ints = test.advantageCount(new int[] {2, 7, 11, 15}, new int[] {1, 10, 4, 11});
+        for (int i: ints)
+            System.out.print(i + " , ");
+        System.out.println();
+        System.out.println(test.reorderedPowerOf2(46));
+        System.out.println(test.matrixScore(new int[][] {{0,0,1,1},{1,0,1,0},{1,1,0,0}}));
+        System.out.println(test.mirrorReflection(60, 24));
+        System.out.println(test.scoreOfParentheses("(()(()))"));
+//        TreeNode t1 = new TreeNode(1);
+//        TreeNode t2 = new TreeNode(2);
+//        TreeNode t3 = new TreeNode(3);
+//        TreeNode t4 = new TreeNode(4);
+//        TreeNode t5 = new TreeNode(5);
+//        TreeNode t6 = new TreeNode(6);
+//        TreeNode t7 = new TreeNode(7);
+//        TreeNode t8 = new TreeNode(8);
+//        t1.left = t2;
+//        t1.right = t3;
+//        t2.left = t4;
+//        t2.right = t5;
+//        t3.left = t6;
+//        t3.right = t7;
+//        t6.right = t8;
+//        test.delNodes(t1, new int[] {3, 5, 8});
 
 
     }
