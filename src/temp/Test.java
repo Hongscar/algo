@@ -8926,9 +8926,62 @@ public class Test {
         return res;
     }
 
+    // 5279
+    public int subtractProductAndSum(int n) {
+        String str = String.valueOf(n);
+        int multipy = 1;
+        int sum = 0;
+        for (char c: str.toCharArray()) {
+            multipy *= c - '0';
+            sum += c - '0';
+        }
+        int res = multipy - sum;
+        return res;
+    }
+
+    // 5280
+    public List<List<Integer>> groupThePeople(int[] groupSizes) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> datas = Arrays.stream(groupSizes).boxed().collect(Collectors.toList());
+        int length = groupSizes.length;
+        boolean[] visited = new boolean[length];
+        for (int i = 0; i < length; i++) {
+            if (visited[i])
+                continue;
+            int number = datas.get(i);
+            List<Integer> current = new ArrayList<>();
+            for (int j = 0; j < number; j++) {
+                int index = datas.indexOf(number);
+                datas.set(index, -1);
+                current.add(index);
+                visited[index] = true;
+            }
+            res.add(new ArrayList<>(current));
+        }
+        return res;
+    }
+
+    // 5281
+    public int smallestDivisor(int[] nums, int threshold) {
+        int left = 0;
+        int right = 1_000_001;
+        while (left + 1 < right) {
+            int mid = (left + right) / 2;
+            long sum = 0;
+            for (int num: nums)
+                sum += (num + mid - 1) / mid;   // 这个加 mid - 1是为了向上取整
+            if (sum > threshold)
+                left = mid;
+            else
+                right = mid;
+        }
+        return right;
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.subtractProductAndSum(234));
         int[] ints = test.advantageCount(new int[] {2, 7, 11, 15}, new int[] {1, 10, 4, 11});
         for (int i: ints)
             System.out.print(i + " , ");
