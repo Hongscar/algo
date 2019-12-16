@@ -8978,9 +8978,654 @@ public class Test {
         return right;
     }
 
+    // 872
+    public boolean leafSimilar(TreeNode root1, TreeNode root2) {
+        List<Integer> list1 = new ArrayList<>();
+        List<Integer> list2 = new ArrayList<>();
+        leafSimilarHelper(root1, list1);
+        leafSimilarHelper(root2, list2);
+        return list1.equals(list2);         // List之间可以直接用equals来判断是否相等
+//        int size = list1.size();
+//        if (size != list2.size())
+//            return false;
+//        for (int i = 0; i < size; i++)
+//            if (list1.get(i) != list2.get(i))
+//                return false;
+//        return true;
+    }
+
+    public void leafSimilarHelper(TreeNode root, List<Integer> list) {
+        if (root == null)
+            return;
+        if (root.left == null && root.right == null)
+            list.add(root.val);
+        else {
+            leafSimilarHelper(root.left, list);
+            leafSimilarHelper(root.right, list);
+        }
+    }
+
+    // 873
+    // 每次先取数组的前两个数,然后调用库函数Arrays.binarySearch二分查找   134ms
+    // 也可以直接构建一个HashSet,然后while条件是 while(set.contains(sum)),效率更高,79ms
+    public int lenLongestFibSubseq(int[] A) {
+        int max = 2;
+        for (int i = 0; i < A.length; i++) {
+            for (int j = i + 1; j < A.length; j++) {
+                int tempI = A[i];
+                int tempJ = A[j];
+                int sum = tempI + tempJ;
+                int current = 2;
+                while (Arrays.binarySearch(A, sum) >= 0) {
+                    tempI = tempJ;
+                    tempJ = sum;
+                    sum = tempI + tempJ;
+                    current++;
+                }
+                max = max > current ? max : current;
+            }
+        }
+        return max < 3 ? 0 : max;
+    }
+
+    // 876
+    public ListNode middleNode(ListNode head) {
+        List<Integer> list = new ArrayList<>();
+        ListNode current = head;        // 不能直接操作head
+        while (current != null) {
+            list.add(current.val);
+            current = current.next;
+        }
+        int size = list.size() / 2;     // 链表可能会有重复的值
+        int i = 1;
+        while (i <= size) {
+            head = head.next;
+            i++;
+        }
+        return head;
+    }
+
+    // 876 double pointers.
+    public ListNode middleNode1(ListNode head) {
+        ListNode dummy = head;
+        while (dummy != null && dummy.next != null) {
+            dummy = dummy.next.next;    // fast pointer
+            head = head.next;           // slow pointer
+        }
+        return head;
+    }
+
+    // 877
+    static int first = 0;
+    public boolean stoneGame(int[] piles) {
+        int length = piles.length;
+        int[][] dp = new int[length][length];
+        stoneGameHelper(piles, 0, length - 1,true);
+        int sum = 0;
+        for (int pile: piles)
+            sum += pile;
+        if (first > sum / 2)
+            return true;
+        return false;
+    }
+
+    public int stoneGameHelper(int[] piles, int left, int right, boolean flag) {
+        if (left == right - 1)
+            return Math.max(piles[left], piles[right]);
+        if (left == right)
+            return piles[right];
+        int temp = Math.max(
+                stoneGameHelper(piles, left + 1, right, !flag) + piles[left],
+                stoneGameHelper(piles, left, right - 1, !flag) + piles[right]);
+        if (flag)
+            first += temp;
+        // if (left == 0 && right == piles.length - 1)
+        return 0;
+    }
+
+    // 878 主要思路: 先求最大公因子gcd, 再求最小公倍数lcm = A * B / gcd
+    // 若一个number是 A和 B的第 x个神奇数字, 那么: x = number / A + number / B - number / lcm
+    // 即分别计算number是 A或 B的第 M 个倍数,再减去重复计算了的
+    // 且number % A == 0 && number % B == 0
+    public int nthMagicalNumber(int N, int A, int B) {
+        int gcd = gcd(A, B);
+        int lcm = A * B / gcd;
+        long left = 2;
+        long right = 40_000_000_000_001L;   // 如果刚好结果是4 * 10 ^ 13, 在一个特殊的testcase会死循环
+        long middle = 2;
+        int mod = 0;
+        int temp = (int)Math.pow(10, 9) + 7;
+        while (left < right) {
+            middle = (left + right) / 2;
+            long index = (middle / A + middle / B - middle / lcm);
+            if (index > N)
+                right = middle;
+            else if (index < N)
+                left = middle;
+            else {
+                mod = (int)Math.min(middle % A, middle % B);    // 有余
+                break;
+            }
+        }
+        return (int)((middle - mod) % temp);
+    }
+
+    // 879      TODO
+    public int profitableSchemes(int G, int P, int[] group, int[] profit) {
+        int length = profit.length;
+        int[][] dp = new int[length][P + 1];    //
+        if (group[0] <= G) {
+            for (int i = 0; i <= profit[0]; i++)
+                dp[0][i] = 1;
+        }
+
+        for (int i = 0; i < length - 1; i++) {
+            int tmp = P;
+            tmp = tmp - profit[i];
+            tmp = tmp < P ? 0 : tmp;
+            dp[i + 1][P] = dp[i][P] + dp[i][tmp];
+            for (int j = 0; j < tmp; j++)
+                dp[i + 1][j] = dp[i + 1][P];
+        }
+        return dp[length - 1][P];
+    }
+
+    // 883
+    public int projectionArea(int[][] grid) {
+        int m = grid.length;
+        int n = grid[0].length;         // n == m
+        int res = 0;
+        for (int i = 0; i < m; i++) {
+            int yMax = 0;
+            for (int j = 0; j < n; j++) {
+                yMax = yMax < grid[i][j] ? grid[i][j] : yMax;
+            }
+            res += yMax;
+        }
+        for (int j = 0; j < n; j++) {
+            int xMax = 0;
+            for (int i = 0; i < m; i++) {
+                xMax = xMax < grid[i][j] ? grid[i][j] : xMax;
+            }
+            res += xMax;
+        }
+        int temp = 0;
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < n; j++)
+                if (grid[i][j] == 0)
+                    temp++;
+        res += m * n;
+        res -= temp;
+        return res;
+    }
+
+    // 881
+    public int numRescueBoats(int[] people, int limit) {
+        int res = 0;
+        int right = people.length - 1;
+        int left = 0;
+        Arrays.sort(people);
+        while (left <= right) {
+            if (left == right) {
+                res++;      // 只剩下最后一个,直接一个走,结束
+                break;
+            }
+            if (people[left] + people[right] > limit) {
+                res++;
+                right--;        // 先载最重的, 而且最小的也无法一起载,那么就最重的单独走
+            }
+            else {
+                res++;
+                right--;        // 最重的与最轻的一起走
+                left++;
+            }
+        }
+        return res;
+    }
+
+    // 880
+    public String decodeAtIndex(String S, int K) {
+        long size = 0;
+        for (char c: S.toCharArray())
+            if (c < 'a')
+                size *= (c - '0');
+            else
+                size++;
+        S = new StringBuilder(S).reverse().toString();
+        for (char c: S.toCharArray()) {
+            K %= size;
+            if (K == 0 && c >= 'a')
+                return String.valueOf(c);
+            if (c < 'a')
+                size /= (c - '0');
+            else
+                size--;
+        }
+        throw null;
+    }
+
+    // 884          用HashSet
+    public String[] uncommonFromSentences(String A, String B) {
+        String[] as = A.split("\\s+");
+        String[] bs = B.split("\\s+");
+        Set<String> set = new HashSet<>();
+        List<String> res = new ArrayList<>();
+        for (String a: as) {
+            if (!set.contains(a)) {
+                set.add(a);
+                res.add(a);
+            }
+            else
+                res.remove(a);
+        }
+        for (String b: bs) {
+            if (!set.contains(b)) {
+                set.add(b);
+                res.add(b);
+            }
+            else
+                res.remove(b);
+        }
+        int size = res.size();
+        String[] strings = new String[size];
+        for (int i = 0; i < size; i++)
+            strings[i] = res.get(i);
+        return strings;
+    }
+
+    // 884      用HashMap
+    public String[] uncommonFromSentences1(String A, String B) {
+        String[] as = A.split(" ");                     // " "效率比\\s+要快.
+        String[] bs = B.split(" ");
+        Map<String, Integer> map = new HashMap<>();
+        for (String a: as)
+            map.put(a, map.getOrDefault(a, 2) - 1);
+        for (String b: bs)
+            map.put(b, map.getOrDefault(b, 2) - 1);
+        List<String> list = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry: map.entrySet())
+            if (entry.getValue() == 1)
+                list.add(entry.getKey());
+        String[] res = new String[list.size()];
+        return list.toArray(res);               // List转数组
+    }
+
+    // 885
+    public int[][] spiralMatrixIII(int R, int C, int r0, int c0) {
+        List<int[]> first = new ArrayList<>();
+        boolean x = true;    // true for x move, false for y move
+        boolean add = true;     // true for add, false for decease
+        int current = 1;
+        int size = 1;
+        int target = R * C;
+        first.add(new int[] {r0, c0});
+        while (size < target) {
+            if (x) {
+                if (r0 < 0 || r0 >= R) {
+                    c0 += add ? current : -current;
+                    x = !x;
+                    continue;
+                }
+                for (int i = 0; i < current; i++) {
+                    c0 += add ? 1 : -1;
+                    if (c0 >= 0 && c0 < C) {
+                        first.add(new int[] {r0, c0});
+                        size++;
+                    }
+                }
+                x = !x;
+            }
+            else {
+                if (c0 < 0 || c0 >= C) {
+                    r0 += add ? current : -current;
+                    x = !x;
+                    add = !add;
+                    current++;
+                    continue;
+                }
+                for (int i = 0; i < current; i++) {
+                    r0 += add ? 1 : -1;
+                    if (r0 >= 0 && r0 < R) {
+                        first.add(new int[] {r0, c0});
+                        size++;
+                    }
+                }
+                x = !x;
+                add = !add;
+                current++;
+            }
+        }
+        int[][] res = new int[target][2];
+        int i = 0;
+        for (int[] ints: first) {
+            res[i][0] = ints[0];
+            res[i++][1] = ints[1];
+        }
+        return res;
+    }
+
+    // 886 TODO
+    public boolean possibleBipartition(int N, int[][] dislikes) {
+        int[] color = new int[N + 1];   // begin at index 1
+        Arrays.sort(dislikes, new Comparator<int[]>() {
+            @Override
+            public int compare(int[] o1, int[] o2) {
+                int tmp = o1[0] - o2[0];
+                if (tmp != 0)
+                    return tmp;
+                return o1[1] - o2[1];
+            }
+        });
+        int countA = 0, countB = 0, begin = 0;
+        for (int i = begin; i < dislikes.length; i++) {
+            int a = dislikes[i][0];
+            int b = dislikes[i][1];
+            begin++;
+            if (color[a] == 0 && color[b] == 0) {
+                color[a] = 1;
+                color[b] = 2;
+                if (possibleBinpartitionHelper(N, dislikes, i + 1, color))
+                    return true;
+                else {
+                    color[a] = 2;
+                    color[b] = 1;
+                }
+            }
+            else if (color[a] != 0 && color[b] == 0)
+                color[b] = color[a] == 1 ? 2 : 1;
+            else if (color[a] == 0 && color[b] != 0)
+                color[a] = color[b] == 1 ? 2 : 1;
+            else if (color[a] == color[b])
+                return false;
+        }
+        return true;
+    }
+
+    public boolean possibleBinpartitionHelper(int N, int[][] dislikes, int begin, int[] color) {
+        for (int i = begin; i < dislikes.length; i++) {
+            int a = dislikes[i][0];
+            int b = dislikes[i][1];
+            System.out.println();
+            for (int q = 0; q < color.length; q++)
+                System.out.print(color[q] + " , ");
+            System.out.println();
+            begin++;
+            if (color[a] == 0 && color[b] == 0) {
+                color[a] = 1;
+                color[b] = 2;
+                if (possibleBinpartitionHelper(N, dislikes, i + 1, color))
+                    return true;
+                else {
+                    System.out.println("---------------------------");
+                    color[a] = 2;
+                    color[b] = 1;
+                    for (int w = 0; w < color.length; w++)
+                        System.out.print(color[w] + " , ");
+                }
+            }
+            else if (color[a] != 0 && color[b] == 0)
+                color[b] = color[a] == 1 ? 2 : 1;
+            else if (color[a] == 0 && color[b] != 0)
+                color[a] = color[b] == 1 ? 2 : 1;
+            else if (color[a] == color[b])
+                return false;
+        }
+        return true;
+    }
+
+    // 888  暴力法 太慢
+    // 假设 sumA = sumB + diff
+    // 交换之后: sumA - a + b = sumB - b + a  ==>  diff + 2b = 2a ==> a = b + diff2
+    // 先把 A存入HashSet, 然后遍历 B, 只要找到值为 b + diff2, 那么此时满足, 结果为: {b + diff2, b}
+    // 通过一个 Set, 使得原本 n ^ 2 的复杂度变成 2n
+    public int[] fairCandySwap(int[] A, int[] B) {
+        int sumA = 0, sumB = 0;
+        for (int a: A)
+            sumA += a;
+        for (int b: B)
+            sumB += b;
+        int diff2 = (sumA - sumB) / 2;
+        Set<Integer> set = new HashSet<>();
+        for (int a: A)
+            set.add(a);
+        for (int b: B)
+            if (set.contains(b + diff2))
+                return new int[] {b + diff2, b};
+        return null;
+    }
+
+    public static String leetCodeReplace(String str) {
+        str = str.replace('[', '{');
+        str = str.replace(']', '}');
+        return str;
+    }
+
+    // 890
+    public List<String> findAndReplacePattern(String[] words, String pattern) {
+        HashMap<Character, List<Integer>> map = new HashMap<>();
+        int length = pattern.length();
+        for (int i = 0; i < length; i++) {
+            Character c = pattern.charAt(i);
+            List<Integer> list = map.getOrDefault(c, new ArrayList<>());
+            list.add(i);
+            map.put(c, list);
+        }
+        List<String> res = new ArrayList<>();
+        for (String word: words)
+            if (isIsomorphic(word, map))
+                res.add(word);
+        return res;
+    }
+
+    public boolean isIsomorphic(String s, HashMap<Character, List<Integer>> map) {
+        HashSet<Character> set = new HashSet<>();
+        for (Map.Entry<Character, List<Integer>> entry: map.entrySet()) {
+            List<Integer> list = entry.getValue();
+            Character current = s.charAt(list.get(0));
+            if (set.contains(current))
+                return false;           // exists previously
+            set.add(current);
+            for (int i = 1; i < list.size(); i++)
+                if (s.charAt(list.get(i)) != current)
+                    return false;
+        }
+        return true;
+    }
+
+    // 890
+    public List<String> findAndReplacePattern1(String[] words, String pattern) {
+        List<String> res = new ArrayList<>();
+        for (String word: words)
+            if (isIsomorphic1(word, pattern))
+                res.add(word);
+        return res;
+    }
+
+    // 891 TODO 关键要解决数组的长度最大为20000, 如何存储2 ^ 20000是个大问题。。
+    public int sumSubseqWidths(int[] A) {
+        Arrays.sort(A);
+        int mod = (int)Math.pow(10, 9) + 7;
+        long res = 0;
+        long pow = 1;
+        for (int i = 0; i < A.length - 1; i++) {
+            pow = 1;
+            for (int j = i + 1; j < A.length; j++) {
+                int diff = A[j] - A[i];
+                long temp = (long)diff * pow;
+                res += (long)diff * pow;
+                pow *= 2;
+                res %= mod;
+            }
+        }
+        return (int)res;
+    }
+
+    // 892
+    public int surfaceArea(int[][] grid) {
+        int sum = 0, over = 0;
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                sum += grid[i][j];
+                if (grid[i][j] > 1)
+                    over += grid[i][j] - 1;     // 竖着看,每两个中间就有1个重叠
+                if (j == grid[0].length - 1)
+                    continue;               // 接下来是左右看, j到达最后就不需要继续了,否则超出index了
+                over += Math.min(grid[i][j], grid[i][j + 1]);
+                over += Math.min(grid[j][i], grid[j + 1][i]);
+            }
+        }
+        return sum * 6 - over * 2;
+    }
+
+    // 893
+    public int numSpecialEquivGroups(String[] A) {
+        int res = 0;
+        Set<String> set = new HashSet<>();
+        for (String a: A) {
+            int length = a.length();
+            List<Character> tmp1 = new ArrayList<>();
+            List<Character> tmp2 = new ArrayList<>();
+            for (int i = 0; i < length; i++)
+                if (i % 2 != 0)
+                    tmp1.add(a.charAt(i));
+                else
+                    tmp2.add(a.charAt(i));
+            Collections.sort(tmp1);
+            Collections.sort(tmp2);
+            String str1 = "", str2 = "";
+            for (Character c: tmp1)
+                str1 += c;
+            for (Character c: tmp2)
+                str2 += c;
+            str1 += str2;
+            set.add(str1);
+        }
+        return set.size();
+    }
+
+    // 894, 递归,把总node数分为左,根,右进行递归
+    public List<TreeNode> allPossibleFBT(int N) {
+        List<TreeNode> res = new ArrayList<>();
+        if (N % 2 == 0)
+            return res;     // null
+        if (N == 1) {
+            TreeNode head = new TreeNode(0);    // 1个结点的时候,直接返回
+            res.add(head);
+            return res;
+        }
+        for (int i = 1; i < N; i += 2) {
+            List<TreeNode> left = allPossibleFBT(i);
+            List<TreeNode> right = allPossibleFBT(N - 1 - i);
+            for (TreeNode l: left) {
+                for (TreeNode r: right) {
+                    TreeNode head = new TreeNode(0);
+                    head.left = l;
+                    head.right = r;
+                    res.add(head);
+                }
+            }
+        }
+        return res;
+    }
+
+    // 896
+    public boolean isMonotonic(int[] A) {
+        if (A.length <= 2)
+            return true;
+        boolean add = true;
+        for (int i = 0; i < A.length - 1; i++)
+            if (A[i] > A[i + 1]) {
+                add = false;
+                break;
+            }
+        if (add)
+            return true;
+        boolean decrease = true;
+        for (int i = 0; i < A.length - 1; i++)
+            if (A[i] < A[i + 1])
+                return false;
+        return true;
+    }
+
+    // 5126
+    public int findSpecialInteger(int[] arr) {
+        int length = arr.length;
+        int threshold = length / 4 + 1;
+        for (int i = 0; i <= length - threshold; i++)
+            if (arr[i] == arr[i + threshold - 1])
+                return arr[i];
+        return -1;
+    }
+
+    // 5127
+    public int removeCoveredIntervals(int[][] intervals) {
+        int m = intervals.length;
+        boolean[] delete = new boolean[m];
+        int count = 0;
+        for (int i = 1; i < m; i++) {
+            for (int j = 0; j < i; j++) {
+                if (delete[j])
+                    continue;
+                if (intervals[j][0] >= intervals[i][0] && intervals[j][1] <= intervals[i][1]) {
+                    delete[j] = true;
+                    count++;
+                }
+                else if (intervals[j][0] <= intervals[i][0] && intervals[j][1] >= intervals[i][1]) {
+                    if (delete[i])
+                        continue;       //avoid to recount
+                    delete[i] = true;
+                    count++;
+                }
+            }
+        }
+        return m - count;
+    }
+
+    // 5129
+    public int minFallingPathSum(int[][] arr) {
+        int length = arr.length;
+        int[][] dp = new int[length][length];
+        for (int i = 0; i < length; i++) {
+            for (int j = 0; j < length; j++) {
+                if (i == 0) {
+                    dp[i][j] = arr[i][j];
+                    continue;
+                }
+                dp[i][j] = Integer.MAX_VALUE;
+                for (int j1 = 0; j1 < length; j1++) {
+                    if (j1 == j)
+                        continue;
+                    int temp = arr[i][j] + dp[i - 1][j1];
+                    dp[i][j] = dp[i][j] >= temp ? temp : dp[i][j];
+                }
+            }
+        }
+        int res = Integer.MAX_VALUE;
+        for (int k = 0; k < length; k++)
+            res = res >= dp[length - 1][k] ? dp[length - 1][k] : res;
+        return res;
+    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+        System.out.println(test.minFallingPathSum(new int[][] {{1,2,3},{4,5,6},{7,8,9}}));
+        System.out.println(test.sumSubseqWidths(new int[] {
+                123,546,768,2,54,234,657,23,54,67,34,123,567,34,23,546,254,6766,324,54654,324,12423,345345,234,345,
+                2134,345,546,678,879,546,324,65}));
+        test.fairCandySwap(new int[] {2}, new int[] {1, 3});
+//        System.out.println(test.possibleBipartition(50,
+//                new int[][]{{21,47},{4,41},{2,41},{36,42},{32,45},{26,28},{32,44},{5,41},{29,44},{10,46},{1,6},{7,42},{46,49},{17,46},{32,35},{11,48},{37,48},{37,43},{8,41},{16,22},{41,43},{11,27},{22,44},{22,28},{18,37},{5,11},{18,46},{22,48},{1,17},{2,32},{21,37},{7,22},{23,41},{30,39},{6,41},{10,22},{36,41},{22,25},{1,12},{2,11},{45,46},{2,22},{1,38},{47,50},{11,15},{2,37},{1,43},{30,45},{4,32},{28,37},{1,21},{23,37},{5,37},{29,40},{6,42},{3,11},{40,42},{26,49},{41,50},{13,41},{20,47},{15,26},{47,49},{5,30},{4,42},{10,30},{6,29},{20,42},{4,37},{28,42},{1,16},{8,32},{16,29},{31,47},{15,47},{1,5},{7,37},{14,47},{30,48},{1,10},{26,43},{15,46},{42,45},{18,42},{25,42},{38,41},{32,39},{6,30},{29,33},{34,37},{26,38},{3,22},{18,47},{42,48},{22,49},{26,34},{22,36},{29,36},{11,25},{41,44},{6,46},{13,22},{11,16},{10,37},{42,43},{12,32},{1,48},{26,40},{22,50},{17,26},{4,22},{11,14},{26,39},{7,11},{23,26},{1,20},{32,33},{30,33},{1,25},{2,30},{2,46},{26,45},{47,48},{5,29},{3,37},{22,34},{20,22},{9,47},{1,4},{36,46},{30,49},{1,9},{3,26},{25,41},{14,29},{1,35},{23,42},{21,32},{24,46},{3,32},{9,42},{33,37},{7,30},{29,45},{27,30},{1,7},{33,42},{17,47},{12,47},{19,41},{3,42},{24,26},{20,29},{11,23},{22,40},{9,37},{31,32},{23,46},{11,38},{27,29},{17,37},{23,30},{14,42},{28,30},{29,31},{1,8},{1,36},{42,50},{21,41},{11,18},{39,41},{32,34},{6,37},{30,38},{21,46},{16,37},{22,24},{17,32},{23,29},{3,30},{8,30},{41,48},{1,39},{8,47},{30,44},{9,46},{22,45},{7,26},{35,42},{1,27},{17,30},{20,46},{18,29},{3,29},{4,30},{3,46}}));
+//        test.spiralMatrixIII(1, 4, 0, 0);
+        test.uncommonFromSentences("asd","ascx");
+        System.out.println(Long.MAX_VALUE);
+        System.out.println(test.decodeAtIndex("leet2code3", 10));
+        System.out.println(test.numRescueBoats(new int[] {34,65,67,12,45,76,34,12,34,54,
+                65,1,4,6,8,87,45,99,65,34,65,23,51,28,97,54,22,14,68,90,8,65,24,26}, 100));
+        System.out.println(test.profitableSchemes(12322, 3, new int[]{2, 2},
+                new int[] {2, 3}));
+        System.out.println(test.nthMagicalNumber(1000000000, 40000, 40000));
+        System.out.println(test.stoneGame(new int[] {5, 3, 4, 5}));
         System.out.println(test.subtractProductAndSum(234));
         int[] ints = test.advantageCount(new int[] {2, 7, 11, 15}, new int[] {1, 10, 4, 11});
         for (int i: ints)
