@@ -9606,35 +9606,544 @@ public class Test {
         return res;
     }
 
+    // 1290
+    public int getDecimalValue(ListNode head) {
+        int res = 0;
+        int tmp = -1;
+        List<Integer> list = new ArrayList<>();
+        while (head != null) {
+            list.add(head.val);
+            head = head.next;
+        }
+        int size = list.size();
+        for (int i = size - 1; i >= 0; i--) {
+            int index = list.get(i);
+            if (index == 1) {
+                if (tmp == -1) {
+                    res += 1;
+                }
+                else {
+                    res += 2 << tmp;
+                }
+            }
+            tmp++;
+        }
+        return res;
+    }
+
+    // 1290
+    public int getDecimalValue1(ListNode head) {
+        int result = 0;
+        ListNode p = head;
+        while (p != null) {
+            result += p.val;
+            result <<= 1;
+            p = p.next;
+        }
+        result >>= 1;
+        return result;
+    }
+
+    // 1290
+    public int getDecimalValue2(ListNode head) {
+        int tmp = 0;
+        while (null != head) {
+            tmp = tmp * 2 + head.val;
+            head = head.next;
+        }
+        return tmp;
+    }
+
+    public List<Integer> sequentialDigits(int low, int high) {
+        List<Integer> list = new ArrayList<>();
+        List<Integer> res = new ArrayList<>();
+        sequentialDigitsGenerator(list, 2, 0);
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            int current = list.get(i);
+            if (current < low)
+                continue;
+            if (current > high)
+                break;
+            res.add(current);
+        }
+        return res;
+    }
+
+    public void sequentialDigitsGenerator(List<Integer> list, int digit, int begin) {
+        if (digit == 10)        // 10 ^ 9 是11位
+            return;
+        if (digit + begin == 10) {
+            sequentialDigitsGenerator(list, digit + 1, 0);
+            return;
+        }
+        int first = begin + 1;
+        int tmp = (int)Math.pow(10, digit - 1);
+        int current = 0;
+        for (int i = 0; i < digit; i++) {
+            current += first++ * tmp;
+            tmp /= 10;
+        }
+        list.add(current);
+        sequentialDigitsGenerator(list, digit, begin + 1);
+    }
+
+    public int maxSideLength(int[][] mat, int threshold) {
+        int m = mat.length;
+        int n = mat[0].length;
+        int min = Math.min(m, n);
+        int left = 0, right = min;
+        boolean flag = true;
+        while (left <= right) {
+            flag = true;
+            int mid = (left + right) / 2;
+//            int minSum = Integer.MAX_VALUE;
+            for (int i = 0; i <= m - mid; i++) {
+                for (int j = 0; j <= n - mid; j++) {    // (i, j)是左上角的起点
+                    int sum = 0;
+                    for (int i1 = 0; i1 < mid; i1++) {
+                        for (int j1 = 0; j1 < mid; j1++) {
+                            sum += mat[i + i1][j + j1];
+                        }
+                    }
+//                    minSum = minSum < sum ? minSum : sum;
+                    if (sum <= threshold) {
+                        left = mid + 1;
+                        i = Integer.MAX_VALUE - 1;
+                        j = Integer.MAX_VALUE - 1;
+                        continue;
+                    }
+                }
+            }
+//            if (minSum > threshold) {
+            right = mid - 1;
+                //continue;
+            //}
+            flag = false;
+        }
+        return left;
+    }
+
+
+    public int shortestPath(int[][] grid, int k) {
+        int m = grid.length;
+        int n = grid[0].length;
+        List<Integer> res = new ArrayList<>();
+        res.add(Integer.MAX_VALUE);
+        bfs(0, 0, k, 0, m, n, grid, res, -1, -1, -1);
+        return res.get(0);
+    }
+
+    public void bfs(int x, int y, int r, int distance, int m, int n, int[][] grid, List<Integer> res,
+                    int px, int py, int pv) {
+        if (x < 0 || y < 0 || x >= m || y >= n || grid[x][y] == 2) {
+            grid[px][py] = pv;
+            return;
+        }
+        if (grid[x][y] == 1 && r == 0) {
+            grid[px][py] = pv;
+            return;
+        }
+        if (x == m - 1 && y == n - 1) {
+            int current = res.get(0);
+            if (distance < current) {
+                res.remove(0);
+                res.add(distance);
+            }
+            grid[px][py] = pv;
+            return;
+        }
+        r = grid[x][y] == 1 ? r - 1 : r;
+        distance++;
+        grid[x][y] = 2;
+        bfs(x - 1, y, r, distance, m, n, grid, res, x, y, grid[x][y]);
+        bfs(x + 1, y, r, distance, m, n, grid, res, x, y, grid[x][y]);
+        bfs(x, y - 1, r, distance, m, n, grid, res, x, y, grid[x][y]);
+        bfs(x, y + 1, r, distance, m, n, grid, res, x, y, grid[x][y]);
+    }
+
+    // 665
+    public boolean checkPossibility(int[] nums) {
+        int length = nums.length;
+        boolean flag = true;
+        int index = 0;
+        for (int i = 0; i < length - 1; i++) {
+            if (nums[i] > nums[i + 1]) {
+                flag = false;
+                index = i;
+                break;
+            }
+        }
+        if (flag)
+            return true;    // 不需要1次转换就已经是非递减数列
+        int[] tmp1 = new int[length];
+        int[] tmp2 = new int[length];
+        System.arraycopy(nums, 0, tmp1, 0, length);
+        System.arraycopy(nums, 0, tmp2, 0, length);
+        tmp1[index] = tmp1[index + 1];          //把nums[i] = nums[i + 1]
+        tmp2[index + 1] = tmp2[index];          //把nums[i + 1] = nums[i]
+        boolean flag1 = true, flag2 = true;
+        for (int i = 0; i < length - 1; i++) {
+            if (tmp1[i] > tmp1[i + 1]) {
+                flag1 = false;
+                break;
+            }
+        }
+        for (int i = 0; i < length - 1; i++) {
+            if (tmp2[i] > tmp2[i + 1]) {
+                flag2 = false;
+                break;
+            }
+        }
+        return flag1 || flag2;
+    }
+
+    // 290
+    public boolean wordPattern(String pattern, String str) {
+        Map<Character, List<Integer>> map = new HashMap<>();
+        String[] strings = str.split(" ");
+        int length = pattern.length();
+        if (strings.length != length)
+            return false;
+        for (int i = 0; i < length; i++) {
+            char c = pattern.charAt(i);
+            List<Integer> list = map.getOrDefault(c, new ArrayList<>());
+            list.add(i);
+            map.put(c, new ArrayList<>(list));
+        }
+        Set<String> set = new HashSet<>();  // used to store the prev values
+        for (List<Integer> list: map.values()) {
+            String s = strings[list.get(0)];
+            int size = list.size();
+            for (int i = 0; i < size; i++) {
+                if (!s.equals(strings[list.get(i)]) || set.contains(s))
+                    return false;
+            }
+            set.add(s);
+        }
+        return true;
+    }
+
+    // 383
+    public boolean canConstruct(String ransomNote, String magazine) {
+        Map<Character, Integer> map1 = new HashMap<>();
+        Map<Character, Integer> map2 = new HashMap<>();
+        for (char c: ransomNote.toCharArray())
+            map1.put(c, map1.getOrDefault(c, 0) + 1);
+        for (char c: magazine.toCharArray())
+            map2.put(c, map2.getOrDefault(c, 0) + 1);
+        for (Map.Entry<Character, Integer> entry: map1.entrySet()) {
+            char c = entry.getKey();
+            int i = entry.getValue();
+            if (!map2.containsKey(c) || map2.get(c) < i)
+                return false;
+        }
+        return true;
+    }
+
+    // 367
+    public boolean isPerfectSquare(int num) {
+        int left = 1, right = num;
+        while (left <= right) {
+            int mid = (left + right) / 2;
+            long tmp = (long)mid * mid;         // long 防止溢出
+            if (tmp == num)
+                return true;
+            if (tmp < num)
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+        return false;
+    }
+
+    // 345
+    public String reverseVowels(String s) {
+        List<Character> list = new ArrayList<>();
+        list.add('a');
+        list.add('e');
+        list.add('i');
+        list.add('o');
+        list.add('u');
+        list.add('A');
+        list.add('E');
+        list.add('I');
+        list.add('U');
+        list.add('O');
+        List<Integer> indexs = new ArrayList<>();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (list.contains(c))
+                indexs.add(i);
+        }
+        StringBuilder sb = new StringBuilder(s);
+        int size = indexs.size();
+        for (int i = 0; i < size / 2; i++) {
+            int firstIndex = indexs.get(i);
+            char first = sb.charAt(firstIndex);
+            int secondIndex = indexs.get(size - 1 - i);
+            char second = sb.charAt(secondIndex);
+            sb.setCharAt(firstIndex, second);
+            sb.setCharAt(secondIndex, first);
+        }
+        return sb.toString();
+    }
+
+    // 897
+    public TreeNode increasingBST(TreeNode root) {
+        List<Integer> list = new ArrayList<>();
+        TreeNode res = new TreeNode(-1);
+        inorder(root, list);
+        TreeNode current = res;
+        for (int i: list) {
+            current.right = new TreeNode(i);
+            current = current.right;
+        }
+        return res.right;
+    }
+
+    public void inorder(TreeNode root, List<Integer> res) {
+        if (root == null)
+            return;
+        inorder(root.left, res);
+        res.add(root.val);
+        inorder(root.right, res);
+    }
+
+    // 908
+    public int smallestRangeI(int[] A, int K) {
+        if (A.length == 1)
+            return 0;
+        Arrays.sort(A);                         //nlogn不如 n高效
+        int diff = A[A.length - 1] - A[0];
+        if (diff <= 2 * K)
+            return 0;
+        return diff - 2 * K;
+    }
+
+    // 908
+    public int smallestRangeI1(int[] A, int K) {
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+        for (int a: A) {
+            min = min < a ? min : a;            // O(n)
+            max = max > a ? max : a;
+        }
+        int res = max - min - 2 * K;
+        return res <= 0 ? 0 : res;
+    }
+
+    // 914
+    public boolean hasGroupsSizeX(int[] deck) {
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int d: deck) {
+            map.put(d, map.getOrDefault(d, 0) + 1);
+        }
+        int min = Integer.MAX_VALUE;
+        for (int tmp: map.values())
+            min = min > tmp ? tmp : min;
+        if (min <= 1)
+            return false;
+        int k = 2;
+        int k1 = min / 2;
+        List<Integer> factors = new ArrayList<>();
+        while (k <= k1) {
+            if (min % k == 0)
+                factors.add(k);
+            k++;
+        }
+        factors.add(min);   // 加上本身
+        int size = factors.size();
+        boolean flag;
+        for (int i = 0; i < size; i++) {
+            flag = true;
+            int tmp = factors.get(i);
+            for (int value : map.values()) {
+                if (value % tmp != 0) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag)
+                return true;
+        }
+        return false;
+    }
+
+    // 914
+    public boolean hasGroupsSizeX1(int[] deck) {
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int d: deck) {
+            map.put(d, map.getOrDefault(d, 0) + 1);
+        }
+        List<Integer> list = new ArrayList<>();
+        for (int value: map.values())
+            list.add(value);
+        int size = list.size();
+        for (int i = 0; i < size - 1; i++) {
+            int first = list.get(i);
+            for (int j = i + 1; j < size; j++) {
+                if (gcd(first, list.get(j)) == 1)
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    // 915
+    public int partitionDisjoint(int[] A) {
+        List<Integer> orderList = new ArrayList<>();
+        for (int a: A)
+            orderList.add(a);
+        Collections.sort(orderList);
+        int res = 0, max = Integer.MIN_VALUE;
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < A.length; i++) {
+            list.add(A[i]);
+            max = max > A[i] ? max : A[i];
+            res++;
+            orderList.remove((Integer)A[i]);        // 这个remove办法太慢了 O(n), n次就是 n ^ 2
+            if (max <= orderList.get(0))
+                return res;
+        }
+        return -1;
+    }
+
+    // 915
+    public int partitionDisjoint1(int[] A) {
+        if (A == null || A.length == 0)
+            return 0;
+        int leftMax = A[0], max = A[0], index = 0;
+        for (int i = 1; i < A.length; i++) {
+            max = Math.max(max, A[i]);
+            if (A[i] < leftMax) {
+                leftMax = max;
+                index = i;
+            }
+        }
+        return index + 1;
+    }
+
+    // 917          也可以用双指针, left , right
+    public String reverseOnlyLetters(String S) {
+        StringBuilder sb = new StringBuilder(S);
+        List<Integer> list = new ArrayList<>();
+        int size = sb.length();
+        for (int i = 0; i < size; i++) {
+            char c = sb.charAt(i);
+            if (Character.isLetter(c))
+                list.add(i);
+        }
+        size = list.size();
+        for (int i = 0; i < size / 2; i++) {
+            int first = list.get(i);
+            int second = list.get(size - 1 - i);
+            char tmp1 = sb.charAt(first);
+            char tmp2 = sb.charAt(second);
+            sb.setCharAt(first, tmp2);
+            sb.setCharAt(second, tmp1);
+        }
+        return sb.toString();
+    }
+
+    // 922
+    public int[] sortArrayByParityII(int[] A) {
+        int[] res = new int[A.length];
+        int odd = 0, even = 0;
+        for (int i = 0; i < A.length; i++)
+            if (A[i] % 2 == 0)
+                res[even++ * 2] = A[i];
+            else
+                res[odd++ * 2 + 1] = A[i];
+        return res;
+    }
+
+    // 921
+    public int minAddToMakeValid(String S) {
+        int left = 0, right = 0, res = 0;
+        for (char c: S.toCharArray()) {
+            if (c == '(') {
+                if (right > left) {
+                    res += right - left;
+                    left = right = 0;
+                }
+                left++;
+            }
+            else {
+                right++;
+            }
+            if (left == right)
+                left = right = 0;
+        }
+        res += Math.abs(left - right);
+        return res;
+    }
+
+
+
+
+//    public boolean lcr(int a, int b) {
+//        return gcd(a, b) != 1;
+//    }
+
+//    public int gcd(int a, int b) {
+//        return b == 0 ? a : gcd(b, a % b);
+//    }
+
         //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
-        System.out.println(test.minFallingPathSum(new int[][] {{1,2,3},{4,5,6},{7,8,9}}));
-        System.out.println(test.sumSubseqWidths(new int[] {
-                123,546,768,2,54,234,657,23,54,67,34,123,567,34,23,546,254,6766,324,54654,324,12423,345345,234,345,
-                2134,345,546,678,879,546,324,65}));
-        test.fairCandySwap(new int[] {2}, new int[] {1, 3});
-//        System.out.println(test.possibleBipartition(50,
-//                new int[][]{{21,47},{4,41},{2,41},{36,42},{32,45},{26,28},{32,44},{5,41},{29,44},{10,46},{1,6},{7,42},{46,49},{17,46},{32,35},{11,48},{37,48},{37,43},{8,41},{16,22},{41,43},{11,27},{22,44},{22,28},{18,37},{5,11},{18,46},{22,48},{1,17},{2,32},{21,37},{7,22},{23,41},{30,39},{6,41},{10,22},{36,41},{22,25},{1,12},{2,11},{45,46},{2,22},{1,38},{47,50},{11,15},{2,37},{1,43},{30,45},{4,32},{28,37},{1,21},{23,37},{5,37},{29,40},{6,42},{3,11},{40,42},{26,49},{41,50},{13,41},{20,47},{15,26},{47,49},{5,30},{4,42},{10,30},{6,29},{20,42},{4,37},{28,42},{1,16},{8,32},{16,29},{31,47},{15,47},{1,5},{7,37},{14,47},{30,48},{1,10},{26,43},{15,46},{42,45},{18,42},{25,42},{38,41},{32,39},{6,30},{29,33},{34,37},{26,38},{3,22},{18,47},{42,48},{22,49},{26,34},{22,36},{29,36},{11,25},{41,44},{6,46},{13,22},{11,16},{10,37},{42,43},{12,32},{1,48},{26,40},{22,50},{17,26},{4,22},{11,14},{26,39},{7,11},{23,26},{1,20},{32,33},{30,33},{1,25},{2,30},{2,46},{26,45},{47,48},{5,29},{3,37},{22,34},{20,22},{9,47},{1,4},{36,46},{30,49},{1,9},{3,26},{25,41},{14,29},{1,35},{23,42},{21,32},{24,46},{3,32},{9,42},{33,37},{7,30},{29,45},{27,30},{1,7},{33,42},{17,47},{12,47},{19,41},{3,42},{24,26},{20,29},{11,23},{22,40},{9,37},{31,32},{23,46},{11,38},{27,29},{17,37},{23,30},{14,42},{28,30},{29,31},{1,8},{1,36},{42,50},{21,41},{11,18},{39,41},{32,34},{6,37},{30,38},{21,46},{16,37},{22,24},{17,32},{23,29},{3,30},{8,30},{41,48},{1,39},{8,47},{30,44},{9,46},{22,45},{7,26},{35,42},{1,27},{17,30},{20,46},{18,29},{3,29},{4,30},{3,46}}));
-//        test.spiralMatrixIII(1, 4, 0, 0);
-        test.uncommonFromSentences("asd","ascx");
-        System.out.println(Long.MAX_VALUE);
-        System.out.println(test.decodeAtIndex("leet2code3", 10));
-        System.out.println(test.numRescueBoats(new int[] {34,65,67,12,45,76,34,12,34,54,
-                65,1,4,6,8,87,45,99,65,34,65,23,51,28,97,54,22,14,68,90,8,65,24,26}, 100));
-        System.out.println(test.profitableSchemes(12322, 3, new int[]{2, 2},
-                new int[] {2, 3}));
-        System.out.println(test.nthMagicalNumber(1000000000, 40000, 40000));
-        System.out.println(test.stoneGame(new int[] {5, 3, 4, 5}));
-        System.out.println(test.subtractProductAndSum(234));
-        int[] ints = test.advantageCount(new int[] {2, 7, 11, 15}, new int[] {1, 10, 4, 11});
-        for (int i: ints)
-            System.out.print(i + " , ");
-        System.out.println();
-        System.out.println(test.reorderedPowerOf2(46));
-        System.out.println(test.matrixScore(new int[][] {{0,0,1,1},{1,0,1,0},{1,1,0,0}}));
-        System.out.println(test.mirrorReflection(60, 24));
-        System.out.println(test.scoreOfParentheses("(()(()))"));
+        System.out.println(test.reverseOnlyLetters("ab-cd"));
+        String S = "aerwefsd";
+        StringBuilder sb = new StringBuilder(S);
+        sb.reverse();
+        System.out.println(sb);
+        System.out.println(test.partitionDisjoint1(new int[] {123,23,34,123,234}));
+        Integer[] temp = new Integer[] {6,5,4,1,2,1,1,2,3,7,8};
+        ArrayList<Integer> list = new ArrayList<>(Arrays.asList(temp));
+        System.out.println(list);
+        list.remove((Integer)1);
+        System.out.println(list);
+        System.out.println(test.hasGroupsSizeX1(new int[] {1,1,1,2,2,2,3,3}));
+//        System.out.println(test.reverseVowels("leetcode"));
+//        System.out.println(test.isPerfectSquare(1165536));
+//        System.out.println(test.canConstruct("a", "b"));
+//        System.out.println(test.canConstruct("aa", "ab"));
+//        System.out.println(test.canConstruct("aa", "aab"));
+        System.out.println(test.wordPattern("ab", "dog dog"));
+//        System.out.println(test.shortestPath(new int[][] {{0,0,0},{1,1,0},{0,0,0},{0,1,1},{0,0,0}}, 1));
+////        System.out.println(test.maxSideLength(
+////                new int[][] {{18,70},{61,1},{25,85},{14,40},{11,96},{97,96},{63,45}}, 123243));
+////        System.out.println((1 + 3) / 2);
+//        System.out.println(test.maxSideLength(new int[][] {{1,1,3,2,4,3,2},{1,1,3,2,4,3,2},{1,1,3,2,4,3,2}}, 4));
+//        System.out.println(test.sequentialDigits(100, 300));
+//        System.out.println(2 << 0);
+//        System.out.println(test.minFallingPathSum(new int[][] {{1,2,3},{4,5,6},{7,8,9}}));
+//        System.out.println(test.sumSubseqWidths(new int[] {
+//                123,546,768,2,54,234,657,23,54,67,34,123,567,34,23,546,254,6766,324,54654,324,12423,345345,234,345,
+//                2134,345,546,678,879,546,324,65}));
+//        test.fairCandySwap(new int[] {2}, new int[] {1, 3});
+////        System.out.println(test.possibleBipartition(50,
+////                new int[][]{{21,47},{4,41},{2,41},{36,42},{32,45},{26,28},{32,44},{5,41},{29,44},{10,46},{1,6},{7,42},{46,49},{17,46},{32,35},{11,48},{37,48},{37,43},{8,41},{16,22},{41,43},{11,27},{22,44},{22,28},{18,37},{5,11},{18,46},{22,48},{1,17},{2,32},{21,37},{7,22},{23,41},{30,39},{6,41},{10,22},{36,41},{22,25},{1,12},{2,11},{45,46},{2,22},{1,38},{47,50},{11,15},{2,37},{1,43},{30,45},{4,32},{28,37},{1,21},{23,37},{5,37},{29,40},{6,42},{3,11},{40,42},{26,49},{41,50},{13,41},{20,47},{15,26},{47,49},{5,30},{4,42},{10,30},{6,29},{20,42},{4,37},{28,42},{1,16},{8,32},{16,29},{31,47},{15,47},{1,5},{7,37},{14,47},{30,48},{1,10},{26,43},{15,46},{42,45},{18,42},{25,42},{38,41},{32,39},{6,30},{29,33},{34,37},{26,38},{3,22},{18,47},{42,48},{22,49},{26,34},{22,36},{29,36},{11,25},{41,44},{6,46},{13,22},{11,16},{10,37},{42,43},{12,32},{1,48},{26,40},{22,50},{17,26},{4,22},{11,14},{26,39},{7,11},{23,26},{1,20},{32,33},{30,33},{1,25},{2,30},{2,46},{26,45},{47,48},{5,29},{3,37},{22,34},{20,22},{9,47},{1,4},{36,46},{30,49},{1,9},{3,26},{25,41},{14,29},{1,35},{23,42},{21,32},{24,46},{3,32},{9,42},{33,37},{7,30},{29,45},{27,30},{1,7},{33,42},{17,47},{12,47},{19,41},{3,42},{24,26},{20,29},{11,23},{22,40},{9,37},{31,32},{23,46},{11,38},{27,29},{17,37},{23,30},{14,42},{28,30},{29,31},{1,8},{1,36},{42,50},{21,41},{11,18},{39,41},{32,34},{6,37},{30,38},{21,46},{16,37},{22,24},{17,32},{23,29},{3,30},{8,30},{41,48},{1,39},{8,47},{30,44},{9,46},{22,45},{7,26},{35,42},{1,27},{17,30},{20,46},{18,29},{3,29},{4,30},{3,46}}));
+////        test.spiralMatrixIII(1, 4, 0, 0);
+//        test.uncommonFromSentences("asd","ascx");
+//        System.out.println(Long.MAX_VALUE);
+//        System.out.println(test.decodeAtIndex("leet2code3", 10));
+//        System.out.println(test.numRescueBoats(new int[] {34,65,67,12,45,76,34,12,34,54,
+//                65,1,4,6,8,87,45,99,65,34,65,23,51,28,97,54,22,14,68,90,8,65,24,26}, 100));
+//        System.out.println(test.profitableSchemes(12322, 3, new int[]{2, 2},
+//                new int[] {2, 3}));
+//        System.out.println(test.nthMagicalNumber(1000000000, 40000, 40000));
+//        System.out.println(test.stoneGame(new int[] {5, 3, 4, 5}));
+//        System.out.println(test.subtractProductAndSum(234));
+//        int[] ints = test.advantageCount(new int[] {2, 7, 11, 15}, new int[] {1, 10, 4, 11});
+//        for (int i: ints)
+//            System.out.print(i + " , ");
+//        System.out.println();
+//        System.out.println(test.reorderedPowerOf2(46));
+//        System.out.println(test.matrixScore(new int[][] {{0,0,1,1},{1,0,1,0},{1,1,0,0}}));
+//        System.out.println(test.mirrorReflection(60, 24));
+//        System.out.println(test.scoreOfParentheses("(()(()))"));
 //        TreeNode t1 = new TreeNode(1);
 //        TreeNode t2 = new TreeNode(2);
 //        TreeNode t3 = new TreeNode(3);
