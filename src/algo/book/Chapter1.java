@@ -46,12 +46,16 @@ public class Chapter1 {
         return result;
     }
 
+    public int gcd1(int m, int n) {
+        return n == 0 ? m : gcd1(n, m % n);
+    }
+
     public static void main(String[] args) {
         Chapter1 ch1 = new Chapter1();
 //        ArrayList<Integer> list = ch1.sieve(100000);
 //        System.out.println(list.size());
 //        System.out.println(list.size());
-        System.out.println(ch1.gcd(80, 10));
+        System.out.println(ch1.gcd(0, 2));
     }
 
 }

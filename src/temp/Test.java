@@ -15,7 +15,8 @@ import java.util.stream.IntStream;
 
 /**
  * @Author: Seth
- * @Description:
+ * @Description:    阶段1, 刷题的开始, 没有任何目的, 在刷题的过程中熟练编程, 并且熟悉基本的算法题
+ *                  大部分情况下, 只满足于把题做出来, 缺少一题多解, 归纳总结等等。
  * @Date: Created in 10:22 2019/8/28
  */
 
@@ -10079,38 +10080,696 @@ public class Test {
         return res;
     }
 
+    public boolean isPossibleDivide(int[] nums, int k) {
+        int length = nums.length;
+        if (length % k != 0)
+            return false;
+        Arrays.sort(nums);
+        List<Integer> list = new ArrayList<>();
+        for (int num: nums) {
+            list.add(num);
+        }
+        int current = 0;
+        while (current != length) {
+            int first = list.get(0);
+            for (int i = 0; i < k; i++) {
+                if (!list.remove((Integer)first))
+                    return false;
+                first++;
+            }
+            current += k;
+        }
+        return true;
+    }
 
+    public int maxFreq(String s, int maxLetters, int minSize, int maxSize) {
+        Map<String, Integer> map = new HashMap<>();
+        int length = s.length();
+        for (int i = minSize; i <= maxSize; i++) {
+            for (int j = 0; j <= length - i; j++) {
+                String temp = s.substring(j, j + i);
+                if (check(temp, maxLetters))
+                    map.put(temp, map.getOrDefault(temp, 0) + 1);
+            }
+        }
+        int res = 0;
+        for (int value: map.values())
+            res = res > value ? res : value;
+        return res;
+    }
 
+    public boolean check(String s, int k) {
+        int[] test = new int[26];
+        int res = 0;
+        for (char c: s.toCharArray()) {
+            test[c - 'a']++;
+            if (test[c - 'a'] == 1)
+                res++;
+        }
+        return res <= k;
+    }
 
-//    public boolean lcr(int a, int b) {
-//        return gcd(a, b) != 1;
+    public int maxCandies(int[] status, int[] candies, int[][] keys, int[][] containedBoxes, int[] initialBoxes) {
+        int res = 0;
+        List<Integer> haveBoxes = new ArrayList<>();
+        List<Integer> haveKeys = new ArrayList<>();
+        for (int box: initialBoxes)
+            haveBoxes.add(box);
+        while (true) {
+            int currentBox = -1;
+            for (int box: haveBoxes) {
+                if (status[box] == 1 || haveKeys.contains(box)) {
+                    currentBox = box;
+                    haveBoxes.remove((Integer)box);
+                    break;
+                }
+            }
+            if (currentBox == -1)
+                break;      // no available box
+            res += candies[currentBox];
+            int[] keysInit = keys[currentBox];
+            for (int i = 0; i < keysInit.length; i++)
+                haveKeys.add(keysInit[i]);
+            int[] boxesInit = containedBoxes[currentBox];
+            for (int i = 0; i < boxesInit.length; i++)
+                haveBoxes.add(boxesInit[i]);
+        }
+        return res;
+    }
+
+    public int threeSumMulti(int[] A, int target) {
+        int res = 0;
+        int mod = (int)Math.pow(10, 9) + 7;
+        for (int i = 0; i < A.length - 2; i++) {
+            boolean flag1 = false;
+            int second = 0;
+            for (int j = i + 1; j < A.length - 1; j++) {
+                if (flag1 && A[j] == A[j - 1]) {
+                    if (A[i] + A[j - 1] + A[j] == target)
+                        second--;
+                    res += second;
+                    continue;
+                }
+                second = 0;
+                flag1 = false;
+                boolean flag = false;
+                int tmp = -1;
+                for (int k = j + 1; k < A.length; k++) {
+                    if (flag && A[k] == tmp) {
+                        second++;
+                        continue;
+                    }
+                    if (A[i] + A[j] + A[k] == target) {
+                        second++;
+                        flag = true;
+                        tmp = A[k];
+                    }
+                }
+                res += second;
+                flag1 = true;
+            }
+        }
+        return res;
+    }
+
+    // 1189
+    public int maxNumberOfBalloons(String text) {
+        int[] nums = new int[26];
+        for (char c: text.toCharArray())
+            nums[c - 'a']++;
+        nums[11] /= 2;
+        nums[14] /= 2;
+        int min = Math.min(nums[11], nums[14]);
+        min = Math.min(min, nums[0]);
+        min = Math.min(min, nums[1]);
+        min = Math.min(min, nums[13]);
+        return min;
+    }
+
+    // 1200
+    public List<List<Integer>> minimumAbsDifference(int[] arr) {
+        List<List<Integer>> res = new ArrayList<>();
+        Arrays.sort(arr);
+        int min = Integer.MAX_VALUE;
+        for (int i = 0; i < arr.length - 1; i++) {
+            int tmp = arr[i + 1] - arr[i];
+            min = min < tmp ? min : tmp;
+        }
+        for (int i = 0; i < arr.length - 1; i++) {
+            int tmp = arr[i + 1] - arr[i];
+            if (tmp == min) {
+                List<Integer> temp = new ArrayList<>();
+                temp.add(arr[i]);
+                temp.add(arr[i + 1]);
+                res.add(new ArrayList<>(temp));
+            }
+        }
+        return res;
+    }
+
+    // 1137
+    public int tribonacci(int n) {
+        int[] res = new int[38];
+        res[0] = 0;
+        res[1] = 1;
+        res[2] = 1;
+        res[3] = 2;
+        for (int i = 4; i <= n; i++)
+            res[i] = res[i - 1] + res[i - 2] + res[i - 3];
+        return res[n];
+    }
+
+//    public int findBestValue(int[] arr, int target) {
+//        Arrays.sort(arr);
+//        int res = arr[0];
+//        int sum = 0;
+//        int rest = arr.length;
+//        int littleDiff = Integer.MAX_VALUE;
+//        int result = 0;
+//        for (int i = 0; i < arr.length; i++) {
+//            int diff = Math.abs(sum + rest * arr[i] - target);
+//            sum += arr[i];
+//            if (diff == 0)
+//                return arr[i];
+//            if (diff < littleDiff) {
+//                littleDiff = diff;
+//                res = arr[i];
+//                result = i;
+//            }
+//            else
+//                break;
+//        }
+//        if (result == 0)
+//            return arr[result];
+//        for (int i = arr[result]; i >= arr[result - 1]; i--) {
+//            int diff = Math.abs(sum +)
+//        }
+//        return arr[arr.length - 1];
 //    }
 
-//    public int gcd(int a, int b) {
-//        return b == 0 ? a : gcd(b, a % b);
-//    }
+    public int findBestValue(int[] arr, int target) {
+        Arrays.sort(arr);
+        int res = arr[0];
+        int sum = 0;
+        int rest = arr.length;
+        int littleDiff = Integer.MAX_VALUE;
+        int begin = target / arr.length;
+        for (int i = begin; i <= arr[arr.length - 1]; i++) {
+            sum = 0;
+            rest = arr.length;
+            for (int j = 0; j < arr.length; j++) {
+                if (arr[j] >= i) {
+                    sum += rest * i;
+                    break;
+                }
+                rest--;
+                sum += arr[j];
+            }
+            int diff = Math.abs(sum - target);
+            if (diff == 0)
+                return i;
+            if (diff < littleDiff) {
+                littleDiff = diff;
+                res = i;
+            }
+            else if (diff > littleDiff) {
+                return res;
+            }
+        }
+        return res;
+    }
 
-        //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
+    public int deepestLeavesSum(TreeNode root) {
+        Map<Integer, Integer> map = new HashMap<>();
+        deepestLeavesSumHelper(root, 0, map);
+        int res = 0, max = -1;
+        for (Map.Entry<Integer, Integer> entry: map.entrySet()) {
+            int key = entry.getKey();
+            if (key < max)
+                continue;
+            res = entry.getValue();
+        }
+        return res;
+    }
+
+    public void deepestLeavesSumHelper(TreeNode root, int current, Map<Integer, Integer> map) {
+        if (root == null)
+            return;
+        map.put(current, map.getOrDefault(current, 0) + root.val);
+        deepestLeavesSumHelper(root.left, current + 1, map);
+        deepestLeavesSumHelper(root.right, current + 1, map);
+    }
+
+    int max = 0;
+    int ways = 0;
+    public int[] pathsWithMaxScore(List<String> board) {
+        int score = 0;
+        pathsWithMaxScoreHelper(board, 0, 0, 0);
+        return new int[] {max, ways};
+    }
+
+    public void pathsWithMaxScoreHelper(List<String> board, int i, int j, int score) {
+        if (score < 0 || i >= board.size() || j >= board.size())
+            return;
+        char c = board.get(i).charAt(j);
+        if (c == 'X')
+            return;
+        if (c == 'S') {
+            if (max == score) {
+                ways++;
+                return;
+            }
+            if (max > score)
+                return;
+            max = score;
+            ways = 1;
+        }
+        boolean flag = false;
+        if (c != 'E') {
+            flag = true;
+            score += Integer.valueOf(c) - '0';
+        }
+        pathsWithMaxScoreHelper(board, i + 1, j, score);
+        pathsWithMaxScoreHelper(board, i, j + 1, score);
+    }
+
+    public int[] sumZero(int n) {
+        int[] res = new int[n];
+        if (n == 1) {
+            res[0] = 0;
+            return res;
+        }
+        if (n == 2) {
+            res[0] = -1;
+            res[1] = 1;
+        }
+        int  cur = 1;
+        for (int i = 0; i < n / 2; i++) {
+            res[i] = cur;
+            res[i + 1] = -cur;
+            cur++;
+        }
+        if (n % 2 != 0)
+            res[n - 1] = 0;
+        return res;
+    }
+
+    public boolean canReach(int[] arr, int start) {
+        boolean[] visited = new boolean[arr.length];
+        while (true) {
+            int left = start + arr[start];
+            int right = start - arr[start];
+            if (check(left, arr.length) && !visited[left]) {
+                if (arr[left] == 0)
+                    return true;
+                visited[left] = true;
+                start = left;
+                continue;
+            }
+            if (check(right, arr.length) && !visited[right]) {
+                if (arr[right] == 0)
+                    return true;
+                visited[right] = true;
+                start = right;
+                continue;
+            }
+            return false;
+        }
+    }
+
+    public boolean check (int x, int length) {
+        return x >= 0 && x < length;
+    }
+
+    public boolean isBadVersion(int n, int k) {
+        return n >= k;
+    }
+
+    // 278
+    public int firstBadVersion(int n, int k) {
+        int left = 1, right = n;
+        while (left <= right) {
+            long mid = ((long)left + right) / 2;        // 要用long, 否则可能溢出
+            if (!isBadVersion((int)mid, k))
+                left = (int)mid + 1;
+            else
+                right = (int)mid - 1;
+        }
+        return right + 1;
+    }
+
+    // 299
+    public String getHint(String secret, String guess) {
+        int[] map1 = new int[10];
+        int[] map2 = new int[10];
+        int length = secret.length();
+        for (char c: secret.toCharArray())
+            map1[c - '0']++;
+        for (char c: guess.toCharArray())
+            map2[c - '0']++;
+        int a = 0;
+        for (int i = 0; i < length; i++) {
+            char c1 = secret.charAt(i);
+            char c2 = guess.charAt(i);
+            if (c1 == c2)
+                a++;
+        }
+        int b = 0;
+        for (int i = 0; i < 10; i++)
+            b += Math.min(map1[i], map2[i]);
+        b -= a;
+        String res = a + "A" + b + "B";
+        return res;
+    }
+
+    public int guessNumber(int n, int k) {
+        int left = 1, right = n, tmp = -1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            int r = guess(mid, k);
+            if (r == 0)
+                return mid;
+            if (r == 1)
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+        return 0;       // not exist
+    }
+
+    public int guess(int res, int k) {
+        if (res == k)
+            return 0;
+        if (res > k)
+            return -1;
+        return 1;
+    }
+
+    // 405
+    // 【笔记】核心思想，使用位运算，每4位，对应1位16进制数字。
+    // 使用0xf(00...01111b)获取num的低4位。
+    // >>算数位移，其中正数右移左边补0，负数右移左边补1。
+    // 位移运算并不能保证num==0，需要使用32位int保证（对应16进制小于等于8位）。
+    public String toHex(int num) {
+        if (num == 0)
+            return "0";
+        char[] chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b',
+                'c', 'd', 'e', 'f'};
+        StringBuilder sb = new StringBuilder();
+        while (sb.length() < 8 && num != 0) {
+            sb.append(chars[num & 0xf]);
+            num >>= 4;
+        }
+        return sb.reverse().toString();
+    }
+
+    public int[] xorQueries(int[] arr, int[][] queries) {
+        int[][] res = new int[arr.length][arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            for (int j = i; j < arr.length; j++) {
+                if (i == j) {
+                    res[i][j] = arr[i];
+                    continue;
+                }
+                res[i][j] = res[i][j - 1] ^ arr[j];
+            }
+        }
+        int[] des = new int[queries.length];
+        for (int i = 0; i < queries.length; i++) {
+            int j = queries[i][0];
+            int k = queries[i][1];
+            des[i] = res[j][k];
+        }
+        return des;
+    }
+
+    public List<String> watchedVideosByFriends(List<List<String>> watchedVideos, int[][] friends, int id, int level) {
+        List<String> res = new ArrayList<>();
+        int n = watchedVideos.size();
+        boolean[] visited = new boolean[n];
+        visited[id] = true;
+        List<Integer> current = new ArrayList<>();
+        List<Integer> ids = new ArrayList<>();
+        ids.add(id);
+        while (level > 0) {
+            current.clear();
+            for (int j = 0; j < ids.size(); j++) {
+                int tmp = ids.get(j);
+                for (int i = 0; i < friends[tmp].length; i++) {
+                    if (!current.contains(friends[tmp][i]) && !visited[friends[tmp][i]]) {
+                        current.add(friends[tmp][i]);
+                        visited[friends[tmp][i]] = true;
+                    }
+                }
+            }
+            ids.clear();
+            for (int k = 0; k < current.size(); k++)
+                ids.add(current.get(k));
+            level--;
+        }
+        Map<String, Integer> map = new HashMap<>();
+        int size = ids.size();
+        for (int i = 0; i < size; i++) {
+            int tmp = ids.get(i);
+            List<String> videos = watchedVideos.get(tmp);
+            for (int j = 0; j < videos.size(); j++)
+                map.put(videos.get(j), map.getOrDefault(videos.get(j), 0) + 1);
+        }
+        List<Map.Entry<String, Integer>> list = new ArrayList<>(map.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
+            public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2) {
+                int tmp = o1.getValue() - o2.getValue();
+                if (tmp != 0)
+                    return tmp;
+                return o1.getKey().compareTo(o2.getKey());
+            }
+        });
+        int size1 = list.size();
+        for (int q = 0; q < size1; q++)
+            res.add(list.get(q).getKey());
+        return res;
+    }
+
+    public int longestPalindrome22(String s) {
+        Map<Character, Integer> map = new HashMap<>();
+        for (char c: s.toCharArray())
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        boolean flag = false;
+        int res = 0;
+        for (Map.Entry<Character, Integer> entry: map.entrySet()) {
+            int i = entry.getValue();
+            if (map.size() == 1)
+                return i;
+            if (i % 2 == 0)
+                res += i;
+            else if (i % 2 != 0) {
+                if (!flag)
+                    res += i;
+                else
+                    res += (i - 1);
+                flag = true;
+            }
+        }
+        return res;
+    }
+
+    // 434
+    public int countSegments(String s) {
+        int res = 0;
+        boolean flag = false;
+        for (char c: s.toCharArray()) {
+            boolean f = Character.isWhitespace(c);
+            if (f)
+                flag = false;
+            else {
+                if (!flag) {
+                    flag = true;
+                    res++;
+                }
+            }
+        }
+        return res;
+    }
+
+    // 459
+    public boolean repeatedSubstringPattern(String s) {
+        Map<Character, Integer> map = new HashMap<>();
+        for (char c: s.toCharArray())
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        boolean flag = false;
+        boolean even = false;
+        for (int value: map.values()) {
+            boolean current = value % 2 == 0;
+            if (!flag) {
+                even = current;
+                flag = true;
+            }
+            if (even != current)
+                return false;
+        }
+        return true;
+    }
+
+    class Frequency {
+        public int num;
+        public int freq;
+        public Frequency(int _num, int _freq) {
+            num = _num;
+            freq = _freq;
+        }
+    }
+
+    public int[] rearrangeBarcodes(int[] barcodes) {
+        int[] res = new int[barcodes.length];
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int barcode: barcodes)
+            map.put(barcode, map.getOrDefault(barcode, 0) + 1);
+        PriorityQueue queue = new PriorityQueue(10000, new Comparator<Frequency>() {
+            @Override
+            public int compare(Frequency f1, Frequency f2) {
+                return f1.freq - f2.freq;
+            }
+        });
+        for (Map.Entry<Integer, Integer> entry: map.entrySet()) {
+            Frequency f = new Frequency(entry.getKey(), entry.getValue());
+            queue.add(f);
+        }
+        int i = 0;
+        while (i < barcodes.length) {
+            Frequency f = (Frequency)queue.peek();
+            res[i++] = f.num;
+            f.freq--;
+        }
+        return res;
+    }
+
+    public int minSteps(String s, String t) {
+        Map<Character, Integer> map1 = new HashMap<>();
+        Map<Character, Integer> map2 = new HashMap<>();
+        for (char c: s.toCharArray())
+            map1.put(c, map1.getOrDefault(c, 0) + 1);
+        for (char c: t.toCharArray())
+            map2.put(c, map2.getOrDefault(c, 0) + 1);
+        int res = 0;
+        for (Map.Entry<Character, Integer> entry: map1.entrySet()) {
+            char c = entry.getKey();
+            int v = entry.getValue();
+            int tmp = v - map2.getOrDefault(c, 0);
+            res += tmp <= 0 ? 0 : tmp;
+        }
+        return res;
+    }
+
+    public double angleClock(int hour, int minutes) {
+        double tmp = minutes * 0.5;
+        double hour1 = (hour * 30 + tmp) % 360;
+        double minute1 = minutes * 6;
+        double res = Math.abs(hour1 - minute1);
+        return res >= 180 ? 360 - res : res;
+    }
+
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        int[] s1 = new int[26];
+        int[] s2 = new int[26];
+        int left = 0, right = p.length(), length = s.length();
+        if (length < p.length())
+            return res;
+        for (int i = 0; i < right; i++) {
+            s1[s.charAt(i) - 'a']++;
+            s2[p.charAt(i) - 'a']++;
+        }
+        while (right <= length) {
+            if (check(s1, s2))
+                res.add(left);
+            s1[s.charAt(left++) - 'a']--;
+            if (right + 1 > length)
+                break;
+            s1[s.charAt(right++) - 'a']++;
+        }
+        return res;
+    }
+
+    public boolean check(int[] s1, int[] s2) {
+        for (int i = 0; i < 26; i++)
+            if (s1[i] != s2[i])
+                return false;
+        return true;
+    }
+
+    public boolean judgeSquareSum1(int c) {
+        Set<Integer> set = new HashSet<>();
+        int temp = (int)Math.floor(Math.sqrt(c));
+        for (int i = 0; i <= temp; i++)
+            set.add(i * i);
+        Iterator it = set.iterator();
+        while (it.hasNext()) {
+            if (set.contains(c - (int)it.next()))
+                return true;
+        }
+        return false;
+    }
+
+
+    //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
-        System.out.println(test.reverseOnlyLetters("ab-cd"));
-        String S = "aerwefsd";
-        StringBuilder sb = new StringBuilder(S);
-        sb.reverse();
-        System.out.println(sb);
-        System.out.println(test.partitionDisjoint1(new int[] {123,23,34,123,234}));
-        Integer[] temp = new Integer[] {6,5,4,1,2,1,1,2,3,7,8};
-        ArrayList<Integer> list = new ArrayList<>(Arrays.asList(temp));
-        System.out.println(list);
-        list.remove((Integer)1);
-        System.out.println(list);
-        System.out.println(test.hasGroupsSizeX1(new int[] {1,1,1,2,2,2,3,3}));
-//        System.out.println(test.reverseVowels("leetcode"));
-//        System.out.println(test.isPerfectSquare(1165536));
-//        System.out.println(test.canConstruct("a", "b"));
-//        System.out.println(test.canConstruct("aa", "ab"));
-//        System.out.println(test.canConstruct("aa", "aab"));
-        System.out.println(test.wordPattern("ab", "dog dog"));
+
+        System.out.println(Integer.MAX_VALUE);
+        long start = System.currentTimeMillis();
+        System.out.println(test.judgeSquareSum1(999999999));
+        System.out.println(System.currentTimeMillis() - start);
+        System.out.println(test.findAnagrams("abab", "ab"));
+        System.out.println(test.angleClock(1, 57));
+//        System.out.println(test.repeatedSubstringPattern("aba"));
+//        System.out.println(test.longestPalindrome22("abccccdd"));
+//        List<List<String>> list1 = new ArrayList<>();
+//        list1.add(new ArrayList<>(Arrays.asList(new String[] {"A", "B"})));
+//        list1.add(new ArrayList<>(Arrays.asList(new String[] {"C"})));
+//        list1.add(new ArrayList<>(Arrays.asList(new String[] {"B", "C"})));
+//        list1.add(new ArrayList<>(Arrays.asList(new String[] {"D"})));
+//        System.out.println(test.watchedVideosByFriends(
+//                list1, new int[][] {{1,2}, {0,3}, {0,3}, {1,2}}, 0 ,2));
+//        System.out.println(test.xorQueries(new int[] {15,8,8,8,15}, new int[][] {{2,2},{3,3}}));
+//        System.out.println(test.toHex(26));
+//        System.out.println(test.guessNumber(2, 2));
+//        System.out.println(test.firstBadVersion(2126753390, 1702766719));
+//        System.out.println(test.canReach(new int[] {4,2,3,0,3,1,2}, 5));
+//        test.sumZero(5);
+//        char c = '5';
+//        System.out.println(Integer.valueOf(c) - '0');
+//        List<String> board = new ArrayList<>();
+//        board.add("E23");
+//        board.add("2X2");
+//        board.add("12S");
+//        int[] res = new int[2];
+//        res = test.pathsWithMaxScore(board);
+//        System.out.println(res[0] + " , " + res[1]);
+//        System.out.println(test.findBestValue(new int[]{2,3,5}, 10));
+
+    }
+
+    public void someMainTestCode() {
+                /*
+        //        System.out.println(test.maxFreq("abcde", 2, 3, 3));
+//        System.out.println(test.reverseOnlyLetters("ab-cd"));
+//        String S = "aerwefsd";
+//        StringBuilder sb = new StringBuilder(S);
+//        sb.reverse();
+//        System.out.println(sb);
+//        System.out.println(test.partitionDisjoint1(new int[] {123,23,34,123,234}));
+//        Integer[] temp = new Integer[] {6,5,4,1,2,1,1,2,3,7,8};
+//        ArrayList<Integer> list = new ArrayList<>(Arrays.asList(temp));
+//        System.out.println(list);
+//        list.remove((Integer)1);
+//        System.out.println(list);
+//        System.out.println(test.hasGroupsSizeX1(new int[] {1,1,1,2,2,2,3,3}));
+////        System.out.println(test.reverseVowels("leetcode"));
+////        System.out.println(test.isPerfectSquare(1165536));
+////        System.out.println(test.canConstruct("a", "b"));
+////        System.out.println(test.canConstruct("aa", "ab"));
+////        System.out.println(test.canConstruct("aa", "aab"));
+//        System.out.println(test.wordPattern("ab", "dog dog"));
 //        System.out.println(test.shortestPath(new int[][] {{0,0,0},{1,1,0},{0,0,0},{0,1,1},{0,0,0}}, 1));
 ////        System.out.println(test.maxSideLength(
 ////                new int[][] {{18,70},{61,1},{25,85},{14,40},{11,96},{97,96},{63,45}}, 123243));
@@ -10160,12 +10819,6 @@ public class Test {
 //        t3.right = t7;
 //        t6.right = t8;
 //        test.delNodes(t1, new int[] {3, 5, 8});
-
-
-    }
-
-    public void someMainTestCode() {
-                /*
         test.corpFlightBookings1(new int[][] {{1, 2, 10}, {2, 3, 20}, {2, 5, 25}},5);
         String s123 = "abx.ca.bcs";
         s123 = s123.replaceAll("\\.", "qqq");
