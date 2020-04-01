@@ -27,6 +27,28 @@ public class MainClass {
       ListNode(int x) { val = x; }
   }
 
+    public int pathSum(TreeNode root, int sum) {
+        if (root == null)
+            return 0;
+        return helper(root, sum, 0) + helper(root, sum, root.val);
+    }
+
+    public int helper(TreeNode root, int sum, int current) {
+        if (root == null || (root.left == null && root.right == null))
+            return sum == current ? 1 : 0;
+        int res = 0;
+        if (current == sum)
+            res = 1;
+
+        if (root.left != null && root.right == null)
+            return res + helper(root.left, sum, current + root.left.val) + helper(root.left, sum, 0);
+        if (root.left == null && root.right != null)
+            return res + helper(root.right, sum, current + root.right.val) + helper(root.right, sum, 0);
+        return res + helper(root.left, sum, current + root.left.val) + helper(root.left, sum, 0) +
+                helper(root.right, sum, current + root.right.val) + helper(root.right, sum, 0);
+
+    }
+
     public static TreeNode stringToTreeNode(String input) {
         input = input.trim();
         input = input.substring(1, input.length() - 1);
@@ -176,24 +198,16 @@ public class MainClass {
     }
 
     public static void main(String[] args) throws IOException {
-//        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-//        String line;
-//        while ((line = in.readLine()) != null) {
-//            TreeNode root = stringToTreeNode(line);
-//
-//            new MainClass().flatten(root);
-//            String out = treeNodeToString(root);
-//
-//            System.out.print(out);
-//        }
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         String line;
         while ((line = in.readLine()) != null) {
-            ListNode head = stringToListNode(line);
+            TreeNode root = stringToTreeNode(line);
+            line = in.readLine();
+            int sum = Integer.parseInt(line);
 
-            TreeNode ret = new MainClass().sortedListToBST(head);
+            int ret = new MainClass().pathSum(root, sum);
 
-            String out = treeNodeToString(ret);
+            String out = String.valueOf(ret);
 
             System.out.print(out);
         }

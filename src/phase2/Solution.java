@@ -1,5 +1,7 @@
 package phase2;
 
+import javafx.util.Pair;
+
 import java.util.*;
 
 /**
@@ -859,17 +861,125 @@ public class Solution {
         return res;
     }
 
+    public List<List<Integer>> verticalTraversal(TreeNode root) {
+        List<List<Integer>> res = new ArrayList<>();
+        if (root == null)
+            return res;
+        Map<TreeNode, int[]> positions = new HashMap<>();
+        LinkedList<TreeNode> queue = new LinkedList<>();
+        queue.add(root);
+        positions.put(root, new int[] {0, 0});
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+            if (size != 0)
+                res.add(new ArrayList<>()); // 一层一个List
+            while (size > 0) {
+                TreeNode current = queue.poll();
+                int[] pos = positions.get(current);
+                if (current.left != null) {
+                    queue.add(current.left);
+                    positions.put(current.left, new int[] {pos[0] - 1, pos[1] + 1});
+                }
+                if (current.right != null) {
+                    queue.add(current.right);
+                    positions.put(current.right, new int[] {pos[0] + 1, pos[1] + 1});
+                }
+                size--;
+            }
+        }
+        List<int[]> list = new ArrayList<>();
+        for (Map.Entry<TreeNode, int[]> entry: positions.entrySet()) {
+            int[] value = entry.getValue();
+            int[] tmp = new int[] {value[0], value[1], entry.getKey().val};
+            list.add(tmp);
+        }
+        Collections.sort(list, new Comparator<int[]>() {
+            @Override
+            public int compare(int[] o1, int[] o2) {
+                int x = o1[0] - o2[0];
+                if (x != 0)
+                    return x;
+                int y = o1[1] - o2[1];
+                if (y != 0)
+                    return y;
+                return o1[2] - o2[2];
+            }
+        });
+        for (int[] ints: list) {
+            List<Integer> currentList = res.get(ints[1]);
+            currentList.add(ints[2]);
+            res.set(ints[1], currentList);
+        }
+        return res;
+    }
+
+    public int longestConsecutive(int[] nums) {
+        Set<Integer> numsSet = new HashSet<>();
+        for (Integer num : nums) {
+            numsSet.add(num);
+        }
+        int longest = 0;
+        for (Integer num : nums) {
+            if (numsSet.remove(num)) {
+                // 向当前元素的左边搜索,eg: 当前为100, 搜索：99，98，97,...
+                int currentLongest = 1;
+                int current = num;
+                while (numsSet.remove(current - 1)) current--;
+                currentLongest += (num - current);
+                // 向当前元素的右边搜索,eg: 当前为100, 搜索：101，102，103,...
+                current = num;
+                while(numsSet.remove(current + 1)) current++;
+                currentLongest += (current - num);
+                // 搜索完后更新longest.
+                longest = Math.max(longest, currentLongest);
+            }
+        }
+        return longest;
+    }
+
+    public int hammingWeight(int n) {
+        int res = 0;
+        while (n > 0) {
+            if (n % 2 == 1)
+                res++;
+            n /= 2;
+        }
+        return res;
+    }
+
+    public int[] exchange(int[] nums) {
+        int left = 0, right = nums.length - 1;
+        while (true) {
+            while (left < nums.length && nums[left] % 2 != 0)
+                left++;
+            while (right >= 0 && nums[right] % 2 == 0)
+                right--;
+            if (left >= right)
+                break;
+            int tmp = nums[left];
+            nums[left] = nums[right];
+            nums[right] = tmp;
+        }
+        return nums;
+    }
+
     public static void main(String[] args) {
         Solution solution = new Solution();
-        ArrayList<Integer> list = new ArrayList<>();
-        list.add(3, 33);
-        System.out.println(list);
-        ListNode l1 = new ListNode(1);
+        System.out.println(solution.exchange(new int[] {3,5,8,2,4,5,6,7,8}));
+        System.out.println(solution.longestConsecutive(new int[] {100, 4, 200, 1, 3, 2}));
+       // System.out.println(solution.findKthLargest(new int[] {7, 6, 5, 4, 3, 2, 1}, 2));
+//        HashMap<Integer, Integer> map = new HashMap<>();
+        List<Integer> list = new LinkedList<>();
+        Collections.synchronizedCollection(list);
+        ListNode l1 = new ListNode(0);
         ListNode l2 = new ListNode(2);
-        ListNode l3 = new ListNode(3);
+        ListNode l3 = new ListNode(1);
         ListNode l4 = new ListNode(3);
-        ListNode l5 = new ListNode(2);
-        ListNode l6 = new ListNode(1);
+        ListNode l5 = new ListNode(4);
+        ListNode l6 = new ListNode(5);
+        ListNode l7 = new ListNode(7);
+        ListNode l8 = new ListNode(6);
+
         l1.next = l2; l2.next = l3; l3.next = l4; l4.next = l5; l5.next = l6;
         System.out.println(solution.isPalindrome(l1));
         String str = "abcddfg";
