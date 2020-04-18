@@ -1467,56 +1467,56 @@ public class Test {
         return max;
     }
 
-    public static int trap(int[] height) {
-        int length = height.length;
-        if (length <= 2)
-            return 0;
-
-        int sum = 0;
-        int nextBigger;
-        boolean flag = false;
-        //  int final_index = 0;
-        //    int rightMost = 0;
-
-//        if (height[length - 1] > height[length - 2]) {
-//            for (int i = length - 3; i >= 0; i--) {
-//                if (height[i] > height[length - 1]) {
-//                    rightMost = i;
+//    public static int trap(int[] height) {
+//        int length = height.length;
+//        if (length <= 2)
+//            return 0;
+//
+//        int sum = 0;
+//        int nextBigger;
+//        boolean flag = false;
+//        //  int final_index = 0;
+//        //    int rightMost = 0;
+//
+////        if (height[length - 1] > height[length - 2]) {
+////            for (int i = length - 3; i >= 0; i--) {
+////                if (height[i] > height[length - 1]) {
+////                    rightMost = i;
+////                    break;
+////                }
+////            }
+////        }
+//
+//        for (int i = 0; i < height.length; ) {
+//
+//            nextBigger = -1;
+//            for (int j = i + 1; j < length; j++) {
+//                if (height[j] >= height[i]) {
+//                    nextBigger = j;
 //                    break;
 //                }
 //            }
+//
+//            if (nextBigger == -1) {
+//                i++;
+//                flag = true;
+//                continue;
+//            }
+//
+//            for (int j = i; j < nextBigger; j++) {
+//                if (!flag)
+//                    sum += height[i] - height[j];
+//                else
+//                    sum += height[nextBigger] - height[j];
+//            }
+//
+//            flag = false;
+//
+//            i = nextBigger;
 //        }
-
-        for (int i = 0; i < height.length; ) {
-
-            nextBigger = -1;
-            for (int j = i + 1; j < length; j++) {
-                if (height[j] >= height[i]) {
-                    nextBigger = j;
-                    break;
-                }
-            }
-
-            if (nextBigger == -1) {
-                i++;
-                flag = true;
-                continue;
-            }
-
-            for (int j = i; j < nextBigger; j++) {
-                if (!flag)
-                    sum += height[i] - height[j];
-                else
-                    sum += height[nextBigger] - height[j];
-            }
-
-            flag = false;
-
-            i = nextBigger;
-        }
-
-        return sum;
-    }
+//
+//        return sum;
+//    }
 
     public static boolean checkObs(int x, int y, int[][] obstacles) {
         for (int i = 0; i < obstacles.length; i++) {
@@ -10710,10 +10710,87 @@ public class Test {
         return false;
     }
 
+    public boolean isSubStructure(TreeNode A, TreeNode B) {
+        if (A == null || B == null)
+            return false;
+        if (B.left == null && B.right == null && B.val == A.val)
+            return true;
+        boolean flag1 = false, flag2 = false;
+        if (A.val == B.val)
+            flag1 = isSubStructure(A.left, B.left) || isSubStructure(A.right, B.right);
+        flag2 = isSubStructure(A.left, B) || isSubStructure(A.right, B);
+        return flag1 || flag2;
+    }
+
+    public int trap(int[] height) {
+        if (height.length == 0)
+            return 0;
+        int index = 0, max = height[0];
+        for (int i = 1; i < height.length; i++) {
+            if (height[i] > max) {
+                max = height[i];
+                index = i;
+            }
+        }
+        int res = 0;
+        max = height[0];    // 左边最大
+        for (int i = 1; i < index; i++) {
+            max = max >= height[i] ? max : height[i];
+            res += max - height[i];
+        }
+        max = height[height.length - 1];    // 右边最大
+        for (int i = height.length - 2; i > index; i--) {
+            max = max >= height[i] ? max : height[i];
+            res += max - height[i];
+        }
+        return res;
+    }
+
+    public int trap1(int[] height) {
+        if (height.length == 0)
+            return 0;
+        LinkedList<Integer> stack = new LinkedList<>();
+        stack.push(height[0]);
+        int res = 0;
+        for (int h: height) {
+            while (!stack.isEmpty()) {
+                int top = stack.peek();
+                if (h == top)
+                    break;
+                else if (h > top) {
+                    res += h - top;
+                    stack.pop();
+                }
+                else if (h < top)
+                    stack.push(h);
+                if (stack.isEmpty()) {
+                    stack.push(h);  // 当前成为栈顶
+                    break;
+                }
+            }
+        }
+        return res;
+    }
 
     //"WWEQ ERQW QWWR WWER QWEQ"        cabwefgewcwaefgcf   cae
     public static void main(String[] args) {
         Test test = new Test();
+
+        System.out.println(test.trap1(new int[] {0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1}));
+        TreeNode t1 = new TreeNode(1);
+        TreeNode t2 = new TreeNode(0);
+        TreeNode t3 = new TreeNode(1);
+        TreeNode t4 = new TreeNode(-4);
+        TreeNode t5 = new TreeNode(-3);
+
+        TreeNode t6 = new TreeNode(1);
+        TreeNode t7 = new TreeNode(-4);
+        t1.left = t2;
+        t1.right = t3;
+        t2.left = t4;
+        t2.right = t5;
+        t6.left = t7;
+        System.out.println(test.isSubStructure(t1, t6));
 
         System.out.println(Integer.MAX_VALUE);
         long start = System.currentTimeMillis();

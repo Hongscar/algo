@@ -963,28 +963,574 @@ public class Solution {
         return nums;
     }
 
+    public int myAtoi(String str) {
+        str.trim();
+        int i = 0;
+        int length = str.length();
+        char first = str.charAt(i);
+        boolean lessThanZero = false;
+        if (first == '-') {
+            lessThanZero = true;
+            i++;
+        }
+        StringBuilder sb = new StringBuilder();
+        while (i < length) {
+            char c = str.charAt(i++);
+            if (!Character.isDigit(c))
+                break;
+            sb.append(c);
+        }
+        if (sb.length() == 0)
+            return 0;
+        if (sb.length() >= 11)
+            return lessThanZero ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        long tmp = Long.parseLong(sb.toString());
+        if (tmp >= Integer.MAX_VALUE)
+            return lessThanZero ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        return lessThanZero ? -(int)tmp : (int)tmp;
+    }
+
+    class Tmp {
+        public int a;
+        public Tmp(int a) {
+            this.a = a;
+        }
+
+        public Tmp(Tmp x) {
+            this.a = x.a;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(a);
+        }
+    }
+
+    public int movingCount1(int m, int n, int k) {
+        boolean[][] visited = new boolean[m][n];
+        return bfs(m, n, k, visited, 0, 0);
+    }
+
+    public int bfs(int m, int n, int k, boolean[][] visited, int i, int j) {
+        if (i < 0 || j < 0 || i >= m || j >= n || visited[i][j] ||
+                (i / 10 + i % 10 + j / 10 + j % 10) > k)
+            return 0;
+        visited[i][j] = true;
+        return 1 + bfs(m, n, k, visited, i + 1, j) + bfs(m, n, k, visited, i - 1, j) +
+                bfs(m, n, k, visited, i, j + 1) + bfs(m, n, k, visited, i, j - 1);
+    }
+
+    public int search1(int[] nums, int target) {
+        int left = 0, right = nums.length - 1;
+        return helper1(nums, target, left, right);
+    }
+
+    public int helper1(int[] nums, int target, int left, int right) {
+        while (left <= right) {
+            int mid = (left + right) / 2;
+            if (nums[mid] == target)
+                return 1 + helper1(nums, target, left, mid - 1) + helper1(nums, target, mid + 1, right);
+            else if (nums[mid] > target)
+                right = mid - 1;
+            else
+                left = mid + 1;
+        }
+        return 0;
+    }
+
+    public List<String> generateParenthesis(int n) {
+        List<String> res = new ArrayList<>();
+        helper(n, res, "", 0, 0);
+        return res;
+    }
+
+    public void helper(int n, List<String> res, String prev, int left, int right) {
+        if (prev.length() == n * 2) {
+            if (left == right)
+                res.add(prev);
+            return;
+        }
+        if (left > right)
+            helper(n, res, prev + ")", left, right + 1);
+        helper(n, res, prev + "(", left + 1, right);
+    }
+
+    public int superEggDrop(int K, int N) {
+        int[][] dp = new int[K + 1][N + 1];
+        for (int i = 1; i <= K; i++)        // 1层楼,无论多少个鸡蛋都为1次
+            dp[i][1] = 1;
+        for (int j = 1; j <= N; j++)        // 1个蛋,只能从第一层慢慢丢
+            dp[1][j] = j;
+
+        for (int i = 2; i <= K; i++) {
+            for (int j = 2; j <= N; j++) {
+                dp[i][j] = j;                   // 最多j次,去掉这行会出现min的值取到0的情况
+                // for (int k = 1; k <= j; k++) {
+                //     dp[i][j] = Math.min(dp[i][j], Math.max(dp[i - 1][k - 1], dp[i][j - k]) + 1);
+                // }                                    // 遍历 K 会TLE
+                int left = 2, right = j;
+                while (left < right) {
+                    int mid = (left + right + 1) / 2;
+                    if (dp[i - 1][mid - 1] > dp[i][j - mid])
+                        right = mid - 1;
+                    else
+                        left = mid;
+                }
+                dp[i][j] = Math.max(dp[i - 1][left - 1], dp[i][j - left]) + 1;
+            }
+        }
+        return dp[K][N];
+    }
+
+    public int maxValue(int[][] grid) {
+        if (grid.length == 0 || grid[0].length == 0)
+            return 0;
+        int[][] dp = new int[grid.length][grid[0].length];
+        dp[0][0] = grid[0][0];
+        for (int i = 1; i < grid.length; i++)
+            dp[i][0] = dp[i - 1][0] + grid[i][0];
+        for (int j = 1; j < grid[0].length; j++)
+            dp[0][j] = dp[0][j - 1] + grid[0][j];
+
+        for (int i = 1; i < grid.length; i++)
+            for (int j = 1; j < grid[0].length; j++)
+                dp[i][j] = Math.max(grid[i - 1][j], grid[i][j - 1]) + grid[i][j];
+        return dp[grid.length - 1][grid[0].length - 1];
+    }
+
+    public int translateNum(int num) {
+        String str = String.valueOf(num);
+        int[] dp = new int[str.length() + 1];
+        dp[0] = 1;
+        dp[1] = 1;
+        char prev = str.charAt(0);
+        for (int i = 2; i <= str.length(); i++) {
+            char cur = str.charAt(i - 1);
+            if (prev >= '3' || prev == '2' && cur >= '6')
+                dp[i] = dp[i - 1];
+            else
+                dp[i] = dp[i - 1] + dp[i - 2];
+        }
+        return dp[str.length()];
+    }
+
+    public int[][] findContinuousSequence(int target) {
+        List<List<Integer>> list = new ArrayList<>();
+        List<Integer> current = new ArrayList<>();
+        current.add(1);
+        int sum = 1;
+        int left = 1, right = 2;
+        while (right < target) {
+            sum += right;
+            current.add(right);
+            if (sum == target) {
+                list.add(new ArrayList<>(current));
+                sum -= left;
+                current.remove(0);
+                left++;
+                right++;
+            }
+            else if (sum > target) {
+                sum -= left;
+                sum -= right;
+                current.remove(0);
+                current.remove(current.size() - 1);
+                left++;
+            }
+            else if (sum < target) {
+                right++;
+            }
+        }
+        int[][] res = new int[list.size()][];
+        for (int i = 0; i < list.size(); i++) {
+            List<Integer> l = list.get(i);
+            for (int j = 0; j < l.size(); j++)
+                res[i][j] = l.get(j);
+        }
+
+        return res;
+    }
+
+    public int findDuplicate(int[] nums) {
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] == i + 1)
+                continue;
+            if (nums[i] == nums[nums[i] - 1])
+                return nums[i];
+            int tmp = nums[i];
+            nums[i] = nums[nums[i] - 1];
+            nums[tmp - 1] = tmp;
+        }
+        for (int i = 0; i < nums.length; i++) {
+            if (nums[i] == i + 1)
+                continue;
+            if (nums[i] == nums[nums[i] - 1])
+                return nums[i];
+            int tmp = nums[i];
+            nums[i] = nums[nums[i] - 1];
+            nums[tmp - 1] = tmp;
+        }
+        return -1;
+    }
+
+    public double[] twoSum(int n) {
+        int[][] dp = new int[n + 1][6 * n + 1];
+        for (int i = 1; i <= 6; i++)
+            dp[1][i] = 1;
+        for (int i = 2; i <= n; i++)
+            for (int j = 1; j <= i * 6 ; j++)
+                for (int k = 1; k <= 6; k++)
+                    if (j - k >= 0)
+                        dp[i][j] += dp[i - 1][j - k];
+                    else
+                        break;
+        double[] res = new double[6 * n];
+        double sum = Math.pow(6, n);
+        for (int i = 0; i < res.length; i++)
+            res[i] = dp[n][1 + i] / sum;
+        return res;
+    }
+
+    public int numWays(int n, int[][] relation, int k) {
+        return helper(n, relation, k, 0, 0);
+    }
+
+    public int helper(int n, int[][] relation, int k, int current, int index) {
+        if (index == n - 1 && current == k)
+            return 1;
+        if (current >= k)
+            return 0;
+        int[] tmp = relation[index];
+        int res = 0;
+        for (int t: tmp) {
+            res += helper(n, relation, k, current + 1, t);
+        }
+        return res;
+    }
+
+    public int minJump(int[] jump) {
+        int n = jump.length;
+        int[] dp = new int[n];
+        Arrays.fill(dp, Integer.MAX_VALUE - 1);
+        int prev = 0;
+        dp[0] = 0;
+        for (int i = 0; i < n; i++) {
+            int next = i + jump[i];
+            if (i + jump[i] >= n)
+                next = n - 1;
+            dp[next] = dp[next] <= dp[i] + 1 ? dp[next] : dp[i] + 1;
+            for (int j = Math.max(i + 1, prev); j < next; j++)
+                dp[j] = dp[j] <= dp[next] + 1 ? dp[j] : dp[next] + 1;
+            prev = next;
+        }
+        return dp[n - 1];
+    }
+
+//    public int[] getTriggerTime(int[][] increase, int[][] requirements) {
+//        Map<Integer, List<Integer>> xMap = new HashMap<>();
+//        Map<Integer, List<Integer>> yMap = new HashMap<>();
+//        Map<Integer, List<Integer>> zMap = new HashMap<>();
+//        for (int i = 0; i < requirements.length; i++) {
+//            xMap.put(i, new ArrayList<>());
+//            yMap.put(i, new ArrayList<>());
+//            zMap.put(i, new ArrayList<>());
+//        }
+//        for (int i = 0; i < requirements.length; i++) {
+//            List<Integer> xList = xMap.get(i);
+//            List<Integer> yList = yMap.get(i);
+//            List<Integer> zList = zMap.get(i);
+//            xList.add(requirements[i][0]);
+//            yList.add(requirements[i][1]);
+//            zList.add(requirements[i][2]);
+//            xMap.put(i, xList);
+//            yMap.put(i, yList);
+//            zMap.put(i, zList)];
+//        }
+//        List<Map.Entry<Integer, List<Integer>>> xLists = new ArrayList<>(xMap.entrySet());
+//        List<Map.Entry<Integer, List<Integer>>> yLists = new ArrayList<>(yMap.entrySet());
+//        List<Map.Entry<Integer, List<Integer>>> zLists = new ArrayList<>(zMap.entrySet());
+//        Collections.sort(xLists, new Comparator<Map.Entry<Integer, List<Integer>>>() {
+//            @Override
+//            public int compare(Map.Entry<Integer, List<Integer>> o1, Map.Entry<Integer, List<Integer>> o2) {
+//                return o1.getValue().get()
+//            }
+//        });
+////        // 对HashMap根据Value排序
+////        List<Map.Entry<Integer, Integer>> list = new ArrayList<>(map.entrySet());
+////        Collections.sort(list, new Comparator<Map.Entry<Integer, Integer>>() {
+////            @Override
+////            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
+////                return o2.getValue().compareTo(o1.getValue());
+////            }
+////        });
+//    }
+
+    class TempNode {
+        int index;
+        int value;
+        TempNode(int i, int v) {
+            index = i;
+            value = v;
+        }
+    }
+
+    public int[] getTriggerTime(int[][] increase, int[][] requirements) {
+        TempNode[] req1 = new TempNode[requirements.length],
+                req2 = new TempNode[requirements.length], req3 = new TempNode[requirements.length];
+        for (int i = 0; i < requirements.length; i++) {
+            req1[i] = new TempNode(i, requirements[i][0]);
+            req2[i] = new TempNode(i, requirements[i][1]);
+            req3[i] = new TempNode(i, requirements[i][2]);
+        }
+        Arrays.sort(req1, (o1, o2) -> {return o1.value - o2.value;});
+        Arrays.sort(req2, (o1, o2) -> {return o1.value - o2.value;});
+        Arrays.sort(req3, (o1, o2) -> {return o1.value - o2.value;});
+        int[] tmpX = new int[requirements.length],
+                tmpY = new int[requirements.length], tmpZ = new int[requirements.length];
+        Arrays.fill(tmpX, -1);
+        Arrays.fill(tmpY, -1);
+        Arrays.fill(tmpZ, -1);
+        int x = 0, y = 0, z = 0;
+        int xIndex = 0, yIndex = 0, zIndex = 0;
+        for (int j = xIndex; j < requirements.length; j++) {
+            if (req1[j].value <= x)
+                tmpX[req1[j].index] = 0;
+            else {
+                xIndex = j;
+                break;
+            }
+        }   // 0的情况
+        for (int j = yIndex; j < requirements.length; j++) {
+            if (req2[j].value <= y)
+                tmpY[req2[j].index] = 0;
+            else {
+                yIndex = j;
+                break;
+            }
+        }
+        for (int j = zIndex; j < requirements.length; j++) {
+            if (req3[j].value <= z)
+                tmpZ[req3[j].index] = 0;
+            else {
+                zIndex = j;
+                break;
+            }
+        }
+        for (int i = 0; i < increase.length; i++) {
+            x += increase[i][0];
+            y += increase[i][1];
+            z += increase[i][2];
+            for (int j = xIndex; j < requirements.length; j++) {
+                if (req1[j].value <= x)
+                    tmpX[req1[j].index] = i + 1;
+                else {
+                    xIndex = j;
+                    break;
+                }
+                if (j == requirements.length - 1)
+                    xIndex = requirements.length;
+            }
+            for (int j = yIndex; j < requirements.length; j++) {
+                if (req2[j].value <= y)
+                    tmpY[req2[j].index] = i + 1;
+                else {
+                    yIndex = j;
+                    break;
+                }
+                if (j == requirements.length - 1)
+                    yIndex = requirements.length;
+            }
+            for (int j = zIndex; j < requirements.length; j++) {
+                if (req3[j].value <= z)
+                    tmpZ[req3[j].index] = i + 1;
+                else {
+                    zIndex = j;
+                    break;
+                }
+                if (j == requirements.length - 1)
+                    zIndex = requirements.length;
+            }
+        }
+        int[] res = new int[requirements.length];
+        for (int i = 0; i < requirements.length; i++)
+            if (tmpX[i] == -1 || tmpY[i] == -1 || tmpZ[i] == -1)
+                res[i] = -1;
+            else
+                res[i] = Math.max(tmpX[i], Math.max(tmpY[i], tmpZ[i]));
+        return res;
+    }
+
+    public int minJump1(int[] jump) {
+        int n = jump.length;
+        if (n == 1)
+            return 1;
+        int[] dp = new int[n + 1];
+        Arrays.fill(dp, 1000000);
+        int prev = 0;
+        dp[0] = 0;
+        for (int i = 0; i < n; i++) {
+            int next = i + jump[i];
+            if (i + jump[i] >= n)
+                next = n;
+            dp[next] = dp[next] <= dp[i] + 1 ? dp[next] : dp[i] + 1;
+
+            for (int j = Math.max(i + 1, prev); j < next; j++)
+                dp[j] = dp[j] <= dp[next] + 1 ? dp[j] : dp[next] + 1;
+            prev = next;
+        }
+        return dp[n];
+    }
+
+    public int findMinFibonacciNumbers(int k) {
+        List<Integer> list = new ArrayList<>();
+        int pow = 1000000000;
+        list.add(1);
+        list.add(1);
+        while (true) {
+            int next = list.get(list.size() - 1) + list.get(list.size() - 2);
+            System.out.println(next);
+            if (next > pow)
+                break;
+            list.add(next);
+        }
+        int res = 0;
+        Collections.reverse(list);
+        while (true) {
+            for (int i: list) {
+                if (k == 0)
+                    return res;
+                if (k >= i)
+                    res++;
+            }
+        }
+    }
+
+    public String getHappyString(int n, int k) {
+        List<String> list = new ArrayList<>();
+        helper(list, n, "", ' ');
+        return list.get(k - 1);
+    }
+
+    public void helper(List<String> list, int n, String current, char prev) {
+        if (current.length() == n) {
+            list.add(current);
+            return;
+        }
+        if (prev != 'a')
+            helper(list, n, current + 'a', 'a');
+        if (prev != 'b')
+            helper(list, n, current + 'b', 'b');
+        if (prev != 'c')
+            helper(list, n, current + 'c', 'c');
+    }
+
+    public int numberOfArrays(String s, int k) {
+        int[] dp = new int[s.length()];
+        String ks = String.valueOf(k);
+        int len = ks.length();
+        if (s.charAt(0) == '0')
+            return 0;
+        dp[0] = 1;
+        for (int i = 1; i < s.length(); i++) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(s.charAt(i));
+            int t = Integer.valueOf(s.charAt(i));
+            if (t > k)
+                continue;
+            if (s.charAt(i) != '0')
+                dp[i] += dp[i - 1];
+            for (int j = i - 1; j >= 0; j--) {
+                char cur = s.charAt(j);
+                sb.append(cur);
+                if (cur == '0')
+                    continue;
+                if (Integer.valueOf(sb.reverse().toString()) > k)
+                    break;
+                dp[i] += dp[j];
+                sb.reverse();
+            }
+            if (Integer.valueOf(sb.reverse().toString()) > k)
+                continue;
+            sb.reverse();
+        }
+        return dp[s.length() - 1];
+    }
+
     public static void main(String[] args) {
         Solution solution = new Solution();
-        System.out.println(solution.exchange(new int[] {3,5,8,2,4,5,6,7,8}));
-        System.out.println(solution.longestConsecutive(new int[] {100, 4, 200, 1, 3, 2}));
-       // System.out.println(solution.findKthLargest(new int[] {7, 6, 5, 4, 3, 2, 1}, 2));
-//        HashMap<Integer, Integer> map = new HashMap<>();
-        List<Integer> list = new LinkedList<>();
-        Collections.synchronizedCollection(list);
-        ListNode l1 = new ListNode(0);
-        ListNode l2 = new ListNode(2);
-        ListNode l3 = new ListNode(1);
-        ListNode l4 = new ListNode(3);
-        ListNode l5 = new ListNode(4);
-        ListNode l6 = new ListNode(5);
-        ListNode l7 = new ListNode(7);
-        ListNode l8 = new ListNode(6);
+        System.out.println(solution.numberOfArrays("1234567890", 90));
+        System.out.println(solution.findMinFibonacciNumbers(7));
+//        int[] res = solution.getTriggerTime(new int[][] {{0,4,5},{4,8,8},{8,6,1},{10,10,0}},
+//                new int[][] {{12,11,16}, {20,2,6},{9,2,6},{10,18,3},{8,14,9}});
+//        for (int r: res)
+//            System.out.println(r);
+//        String str = "";
+//        for (int i = 0; i < 500000; i++)
+//            System.out.print("1,");
+//        System.out.println();
+//        int[] tmp = new int[1000000];
+//        Arrays.fill(tmp, 1);
 
-        l1.next = l2; l2.next = l3; l3.next = l4; l4.next = l5; l5.next = l6;
-        System.out.println(solution.isPalindrome(l1));
-        String str = "abcddfg";
-        System.out.println(str.substring(6, 7));
-        System.out.println(solution.minimumLengthEncoding(new String[] {"time", "me", "bell"}));
+//        System.out.println(solution.minJump1(new int[] {10,4,4,9,3,4,6,6,4,8,8,4,1,3,5,7,5,1,5,4,
+//                9,3,6,5,5,4,4,10,1,7,10,1,9,5,8,5,5,9,3,10,10,4}));
+
+//        System.out.println(solution.numWays(5, new int[][] {{0, 2}, {2, 1}, }));
+//        System.out.println(solution.twoSum(2));
+//        System.out.println(solution.findDuplicate(new int[] {8,7,1,10,17,15,18,11,16,9,19,12,5,14,3,4,2,13,18,18}));
+//        System.out.print(solution.findContinuousSequence(9));
+//        System.out.println(solution.translateNum(12258));
+//        System.out.println(solution.maxValue(new int[][] {{1,3,1},{1,5,1},{4,2,1}}));
+//        System.out.println(solution.superEggDrop(2, 6));
+//        System.out.println(solution.generateParenthesis(3));
+//        System.out.println(solution.search1(new int[] {5,7,7,8,8,10}, 8));
+//        System.out.println(solution.movingCount1(7, 2, 3));
+//        List<Integer> l1 = new ArrayList<>(Arrays.asList(1, 2, 3));
+//        List<Integer> l2 = new ArrayList<>(Arrays.asList(4, 5, 6));
+//        l2.addAll(l1);
+//        l1.set(1, 1234321);
+//        System.out.println(l2); // [4, 5, 6, 1, 2, 3] 基本类型不改变
+//
+//        List<Tmp> l3 = new ArrayList<>(Arrays.asList(solution.new Tmp(2), solution.new Tmp(3)));
+//        List<Tmp> l4 = new ArrayList<>(Arrays.asList(solution.new Tmp(4), solution.new Tmp(5)));
+//        for (int i = 0; i < l3.size(); i++)
+//            l4.add(solution.new Tmp(l3.get(i)));    // 用add重新new才避免了指向同一对象的问题
+//        l4.addAll(new ArrayList<>(l3)); // 传参为 new ArrayList<>()也无法解决
+//        l3.get(1).a = 23523;
+//        System.out.println(l4); // [23523, 3] 直接修改l3, l4之一,另一个都会改变(指向同一个对象)
+//
+//        List<String> l5 = new ArrayList<>(Arrays.asList("aaa", "bbb"));
+//        List<String> l6 = new ArrayList<>(Arrays.asList("ccc", "ddd"));
+//        l6.addAll(l5);
+//        l5.set(1, "qqq");
+//        System.out.println(l6); // [ccc, ddd, aaa, bbb]  String不可修改
+//
+//        List<Tmp> l7 = new ArrayList<>(Arrays.asList(solution.new Tmp(2), solution.new Tmp(3)));
+//        List<Tmp> l8 = new ArrayList<>(Arrays.asList(solution.new Tmp(4), solution.new Tmp(5)));
+//        l8.addAll(l7);
+//        l8.set(2, solution.new Tmp(99));
+//        l8.get(2).a = 23523;
+//        System.out.println(l7); // [2, 3] set之后,l7,l8在该位置上并不是指向同一个对象
+
+//        System.out.println(solution.exchange(new int[] {3,5,8,2,4,5,6,7,8}));
+//        System.out.println(solution.longestConsecutive(new int[] {100, 4, 200, 1, 3, 2}));
+//       // System.out.println(solution.findKthLargest(new int[] {7, 6, 5, 4, 3, 2, 1}, 2));
+////        HashMap<Integer, Integer> map = new HashMap<>();
+//        List<Integer> list = new LinkedList<>();
+//        Collections.synchronizedCollection(list);
+//        ListNode l1 = new ListNode(0);
+//        ListNode l2 = new ListNode(2);
+//        ListNode l3 = new ListNode(1);
+//        ListNode l4 = new ListNode(3);
+//        ListNode l5 = new ListNode(4);
+//        ListNode l6 = new ListNode(5);
+//        ListNode l7 = new ListNode(7);
+//        ListNode l8 = new ListNode(6);
+//
+//        l1.next = l2; l2.next = l3; l3.next = l4; l4.next = l5; l5.next = l6;
+//        System.out.println(solution.isPalindrome(l1));
+//        String str = "abcddfg";
+//        System.out.println(str.substring(6, 7));
+//        System.out.println(solution.minimumLengthEncoding(new String[] {"time", "me", "bell"}));
         //System.out.println(solution.movingCount(2, 3, 1));
 
 //        System.out.println(solution.exist(new char[][] {{'a','b','c','e'}, {'s','f','e','s'},
