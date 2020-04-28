@@ -53,7 +53,8 @@ public class TestTask1 {
         Thread task2 = new Thread(new Task1("2"));
         task1.start();
         try {
-            task1.join();   task2.join();
+            task1.join();
+            task2.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

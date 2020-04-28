@@ -17,7 +17,7 @@ class AddTask implements Runnable {
         while (true) {
             try {
                 list.add((int)(Math.random() * 10 + 1));
-                Thread.sleep(200);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -55,18 +55,18 @@ public class LimitedList {
     }
 
     synchronized public void add(int element) throws InterruptedException {
-        while (list.size() >= MAX)
+        if (list.size() >= MAX)
             wait();
         list.add(element);
-        notifyAll();
+        notify();
         System.out.println(Thread.currentThread() + " After add, List is: " + list);
     }
 
     synchronized public void delete() throws InterruptedException {
-        while (list.size() == 0)
+        if (list.size() == 0)
             wait();
         list.remove(0);
-        notifyAll();
+        notify();
         System.out.println(Thread.currentThread() + " After delete, List is: " + list);
     }
 

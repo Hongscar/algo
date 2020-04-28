@@ -213,7 +213,27 @@ public class TestExecutors {
         return null;
     }
 
+    public static void testException11() {
+        ExecutorService pool = Executors.newFixedThreadPool(5);
+        for (int i = 0; i < 5; i++) {
+            Future future = pool.submit(() -> {
+                System.out.println(Thread.currentThread().getName());
+                Object obj = null;
+                System.out.println("result##:" + obj.toString());
+            });
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                System.err.println("Catch an interrupted exception!");
+            } catch (ExecutionException e) {
+                System.err.println("Catch an execution exception!");
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        testException2();
+       // testNewSchedulePool();
 //        Random random = new Random();
 //        ExecutorService pool = Executors.newSingleThreadExecutor();
 //        List<Future<Integer>> futureList = new ArrayList<>();
@@ -223,7 +243,6 @@ public class TestExecutors {
 //                @Override
 //                public Integer call() throws Exception {
 //                    int res = 0;
-////                    System.out.println(Thread.currentThread().getName());
 //                    for (int i = 1; i <= 10; i++)
 //                        res += random.nextInt(10);
 //                    try {
@@ -238,22 +257,17 @@ public class TestExecutors {
 //            futureList.add(future);
 //        }
 //        //doSth();    // FutureTask线程submit时, 主线程执行其他操作
-//        int tmp = -1;
 //        for (Future<Integer> future : futureList) {
-//            if (tmp == -1) {
-//                try {
-//                    System.out.println(future);
-//                    tmp = future.get();
-//                    System.out.println(future.get());   // 阻塞future线程
-//                    System.out.println("----");
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
+//            try {
+//                System.out.println(future);
+//                System.out.println(future.get());   // 阻塞future线程
+//                System.out.println("----");
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            } catch (Exception e) {
+//                e.printStackTrace();
 //            }
 //        }
 //        pool.shutdown();
-        testException2();
     }
 }

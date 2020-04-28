@@ -13,6 +13,7 @@ public class Test {
 
     public static List<Integer> list = new ArrayList<>();
     private static Lock lock = new ReentrantLock();
+
     public static void insert(Thread thread) {
         lock.lock();
         System.out.println(thread.getName() + " caught the lock");

@@ -36,20 +36,22 @@ class Job implements Serializable {
 
 public class TestCopy {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream("temp.dat"));
-        ObjectInputStream input = new ObjectInputStream(new FileInputStream("temp.dat"));
-
-        Person person1 = new Person(16, "Hong", new Job(666, "software"));
-        output.writeObject(person1);
-        output.close();
-
-        Person copy_person1 = (Person)input.readObject();
-        input.close();
-
-        System.out.println(copy_person1);   // id= 16, name= Hong, job: {salary: 666, major: software}
-        person1.name = "Ming";
-        person1.id = 99;
-        person1.job.salary = 9999;
-        System.out.println(copy_person1);   // id= 16, name= Hong, job: {salary: 666, major: software}
+//        ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream("temp.dat"));
+//        ObjectInputStream input = new ObjectInputStream(new FileInputStream("temp.dat"));
+//
+//        Person person1 = new Person(16, "Hong", new Job(666, "software"));
+//        output.writeObject(person1);
+//        output.close();
+//
+//        Person copy_person1 = (Person)input.readObject();
+//        input.close();
+//
+//        System.out.println(copy_person1);   // id= 16, name= Hong, job: {salary: 666, major: software}
+//        person1.name = "Ming";
+//        person1.id = 99;
+//        person1.job.salary = 9999;
+//        System.out.println(copy_person1);   // id= 16, name= Hong, job: {salary: 666, major: software}
+        Thread thread = new Thread(() -> {System.out.println(1);});
+        thread.start();
     }
 }

@@ -39,34 +39,15 @@ class Task implements Runnable {
 
 public class PrintABC {
     public static void main(String[] args) throws InterruptedException {
-//        Object a = new Object(), b = new Object(), c = new Object();
-//        Thread pa = new Thread(new Task("A", a, c));
-//        Thread pb = new Thread(new Task("B", b, a));
-//        Thread pc = new Thread(new Task("C", c, b));
-//        pa.start();
-//        Thread.sleep(1000);
-//        pb.start();
-//        Thread.sleep(1000);
-//        pc.start();
-        Foo foo = new Foo();
-        foo.first(new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("one");
-            }
-        });
-        foo.second(new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("two");
-            }
-        });
-        foo.third(new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("three");
-            }
-        });
+        Object a = new Object(), b = new Object(), c = new Object();
+        Thread pa = new Thread(new Task("A", a, c));
+        Thread pb = new Thread(new Task("B", b, a));
+        Thread pc = new Thread(new Task("C", c, b));
+        pa.start();
+        Thread.sleep(1000);
+        pb.start();
+        Thread.sleep(1000);
+        pc.start();
     }
 }
 
